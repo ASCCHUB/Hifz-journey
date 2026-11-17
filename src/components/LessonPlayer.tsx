@@ -4,7 +4,9 @@
 // once, through applyResults() (see lib/lesson.ts). Opening or reading a lesson never records recall.
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { audioUrl, useAudio } from "@/components/Audio";
+import { useAudio } from "@/components/Audio";
+import { OFFLINE_NOT_SAVED_MESSAGE, playTrack } from "@/lib/audioPlayback";
+import { arabicTrack } from "@/lib/audioSources";
 import MapCue from "@/components/MapCue";
 import MethodIntro from "@/components/MethodIntro";
 import { SaveLine } from "@/components/SaveStatus";
@@ -22,17 +24,28 @@ import { useLearnView, ViewSwitch, type WordState } from "@/components/LearnView
 type Mark = "ok" | "hes" | "bad";
 const MARK_LABEL: Record<Mark, string> = { ok: "Recited correctly", hes: "Needed help", bad: "Could not recall" };
 
-/** Sequential repeat-N player for a list of Ayahs using the selected reciter. */
+/** Sequential repeat-N player for a list of Ayahs using the selected reciter. Saved Ayahs play from the device
+ *  (also offline); others stream and are saved automatically once they start (lib/audioCache.ts). */
 export function useRepeatPlayer() {
   const st = useStore(); const global = useAudio();
   const el = useRef<HTMLAudioElement | null>(null); const [playing, setPlaying] = useState(false); const [err, setErr] = useState("");
-  const stop = () => { el.current?.pause(); setPlaying(false); };
+  const run = useRef(0); // a new play() or stop() cancels the previous queue
+  const stop = () => { run.current++; el.current?.pause(); setPlaying(false); };
   const play = (ayahs: Ayah[], times: number) => {
     global.stop(); stop(); setErr("");
     const queue: Ayah[] = []; for (let t = 0; t < times; t++) queue.push(...ayahs);
     if (!el.current) el.current = new Audio();
     const a = el.current; let i = 0;
-    const next = () => { if (i >= queue.length) { setPlaying(false); return; } const [s, x] = queue[i++]; a.src = audioUrl(st.settings.reciter, s, x); a.playbackRate = st.settings.speed; a.play().catch(() => { setErr("Audio could not play (offline or blocked). You can continue by reading."); setPlaying(false); }); };
+    const my = run.current; const isCurrent = () => run.current === my;
+    const next = () => {
+      if (!isCurrent()) return;
+      if (i >= queue.length) { setPlaying(false); return; }
+      const [s, x] = queue[i++];
+      playTrack(a, arabicTrack(st.settings.reciter, s, x), { rate: st.settings.speed, isCurrent }).catch((e: Error) => {
+        if (e?.name === "StaleAudioRequest" || !isCurrent()) return;
+        setErr(e?.name === "OfflineUnavailableError" ? `${OFFLINE_NOT_SAVED_MESSAGE} You can continue by reading.` : "Audio could not play (offline or blocked). You can continue by reading."); setPlaying(false);
+      });
+    };
     a.onended = next; a.onerror = () => { setErr("Audio is unavailable right now. You can continue by reading."); setPlaying(false); };
     setPlaying(true); next();
   };

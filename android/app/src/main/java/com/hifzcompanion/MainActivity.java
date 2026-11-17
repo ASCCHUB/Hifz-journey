@@ -96,6 +96,7 @@ public class MainActivity extends Activity {
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
                 if (!APP_HOST.equals(request.getUrl().getHost())) return super.shouldInterceptRequest(view, request);
+                if (AudioDownloadProxy.PATH.equals(request.getUrl().getPath())) return audioDownload(request);
                 return serveAsset(request.getUrl().getPath());
             }
 
@@ -258,6 +259,22 @@ public class MainActivity extends Activity {
         }
     }
 
+    /**
+     * Same-origin download of one allow-listed Ayah audio file for automatic offline saving (see
+     * AudioDownloadProxy). Runs on the WebView's background thread. The page verifies and stores the bytes in its
+     * own app-private cache; nothing is written to device storage here.
+     */
+    private WebResourceResponse audioDownload(WebResourceRequest request) {
+        if (!"GET".equalsIgnoreCase(request.getMethod())) {
+            return new WebResourceResponse("text/plain", null, 405, "Method Not Allowed", new HashMap<>(), new java.io.ByteArrayInputStream(new byte[0]));
+        }
+        AudioDownloadProxy.Result r = AudioDownloadProxy.fetch(request.getUrl().getQueryParameter("u"), u -> (java.net.HttpURLConnection) u.openConnection());
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Cache-Control", "no-store");
+        if (r.length >= 0) headers.put("Content-Length", String.valueOf(r.length));
+        return new WebResourceResponse(r.mimeType, null, r.status, r.reason, headers, r.body);
+    }
+
     private WebResourceResponse notFound() {
         return new WebResourceResponse("text/plain", "UTF-8", 404, "Not Found", new HashMap<>(), null);
     }
@@ -396,6 +413,10 @@ public class MainActivity extends Activity {
         public String versionName() {
             try { return getPackageManager().getPackageInfo(getPackageName(), 0).versionName; } catch (Exception e) { return "unknown"; }
         }
+
+        /** 1 = this build answers /__hifz-audio/fetch (native download for automatic offline audio). */
+        @JavascriptInterface
+        public int audioProxyVersion() { return 1; }
 
         @JavascriptInterface
         @SuppressWarnings("deprecation")

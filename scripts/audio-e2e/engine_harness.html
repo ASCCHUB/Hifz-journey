@@ -1,0 +1,101 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>audio-cache test harness</title></head>
+<body>
+<audio id="player" preload="auto"></audio>
+<div id="badge"></div>
+<script type="module">
+import { createAudioCache, STATE, KIND_ARABIC, KIND_URDU } from "/__engine/audioCache.js";
+import { arabicTrack, resolveUrduAudio, registerUrduRecording, _resetUrduRecordingsForTests } from "/__engine/audioSources.js";
+
+const player = document.getElementById("player");
+const events = [];
+for (const t of ["playing", "pause", "waiting", "stalled", "error", "ended", "emptied", "abort"]) {
+  player.addEventListener(t, () => events.push({ t, at: performance.now(), src: player.currentSrc.slice(0, 40) }));
+}
+let cache;
+const statusLog = [];
+
+window.H = {
+  STATE, KIND_ARABIC, KIND_URDU,
+  async registerSW() {
+    const reg = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+    await navigator.serviceWorker.ready;
+    if (!navigator.serviceWorker.controller) {
+      await new Promise((r) => navigator.serviceWorker.addEventListener("controllerchange", r, { once: true }));
+    }
+    return !!navigator.serviceWorker.controller;
+  },
+  async init(opts = {}) {
+    cache = createAudioCache({ startDelayMs: 200, stallTimeoutMs: opts.stallTimeoutMs || 4000, log: (...a) => console.log("[audio-cache]", ...a) });
+    cache.subscribe((e) => statusLog.push({ ...e, at: performance.now() }));
+    await cache.init();
+    return true;
+  },
+  ar: (f, s, a) => arabicTrack(f, s, a),
+  async play(track) {
+    events.length = 0;
+    const t0 = performance.now();
+    const r = await cache.play(player, track);
+    const startedAt = performance.now() - t0;
+    window.__saved = r.saved.then((s) => ({ s, at: performance.now() - t0 }));
+    return { source: r.source, startedAt, src: player.currentSrc.slice(0, 30), paused: player.paused };
+  },
+  async playAndTryCatch(track) {
+    try { return { ok: true, ...(await H.play(track)) }; } catch (e) { return { ok: false, name: e.name, message: e.message }; }
+  },
+  awaitSaved: () => window.__saved,
+  async waitPlaying(ms = 4000) {
+    const t = performance.now();
+    while (performance.now() - t < ms) { if (!player.paused && player.currentTime > 0.2) return player.currentTime; await new Promise((r) => setTimeout(r, 50)); }
+    return -1;
+  },
+  playerState: () => ({ paused: player.paused, t: player.currentTime, src: player.currentSrc.slice(0, 30), error: player.error && player.error.code, events: events.slice() }),
+  async seek(sec) { player.currentTime = sec; await new Promise((r) => setTimeout(r, 600)); return { t: player.currentTime, paused: player.paused, error: player.error && player.error.code }; },
+  stop() { player.pause(); player.removeAttribute("src"); player.load(); },
+  status: (track) => cache.getStatus(track),
+  usage: () => cache.usage(),
+  setSettings: (p) => cache.setSettings(p),
+  clear: (o) => cache.clear(o),
+  retry: (o) => cache.retryPending(o),
+  ensureSaved: (t, o) => cache.ensureSaved(t, o),
+  statusLog: () => statusLog.slice(),
+  async cacheKeys(name = "quran-audio-v1") { const c = await caches.open(name); return (await c.keys()).map((r) => r.url); },
+  async cacheNames() { return caches.keys(); },
+  async seedLegacy(url, { opaque = false, bytesUrl } = {}) {
+    // Recreate exactly what the previous service worker stored.
+    const c = await caches.open("quran-audio-v1");
+    if (opaque) {
+      const res = await fetch(url, { mode: "no-cors" });
+      await c.put(url, res);
+    } else {
+      const res = await fetch(bytesUrl || url, { mode: "cors" });
+      await c.put(url, res);
+    }
+    return true;
+  },
+  async seedAppData() {
+    localStorage.setItem("hifz-progress", JSON.stringify({ juz30: "memorised", surah1: [1, 2, 3, 4, 5, 6, 7] }));
+    const s = await caches.open("static-v4"); await s.put("/data/quran.json", new Response('{"test":"quran text"}'));
+    await new Promise((res, rej) => { const r = indexedDB.open("hifz-assessments", 1); r.onupgradeneeded = () => r.result.createObjectStore("evidence"); r.onsuccess = () => { const tx = r.result.transaction("evidence", "readwrite"); tx.objectStore("evidence").put({ score: 9 }, "a1"); tx.oncomplete = () => { r.result.close(); res(); }; }; r.onerror = rej; });
+  },
+  async readAppData() {
+    const p = localStorage.getItem("hifz-progress");
+    const s = await (await caches.open("static-v4")).match("/data/quran.json");
+    const ev = await new Promise((res) => { const r = indexedDB.open("hifz-assessments", 1); r.onsuccess = () => { const g = r.result.transaction("evidence").objectStore("evidence").get("a1"); g.onsuccess = () => { res(g.result); r.result.close(); }; }; r.onerror = () => res(null); });
+    return { progress: p, staticText: s ? await s.text() : null, evidence: ev };
+  },
+  urdu: { resolveUrduAudio, registerUrduRecording, reset: _resetUrduRecordingsForTests },
+  async directSrcPlay(url) {
+    // Player that sets the remote URL directly (not integrated with the module): relies on the SW.
+    events.length = 0;
+    player.src = url;
+    await player.play();
+    return true;
+  },
+  online: () => navigator.onLine,
+};
+window.HARNESS_READY = true;
+</script>
+</body>
+</html>

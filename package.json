@@ -21,7 +21,9 @@
     "test:android-mushaf-ux": "node scripts/test-android-mushaf-ux.mjs",
     "test:local-time": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning --test --test-isolation=none scripts/test-local-time.mjs",
     "test:four-android-fixes": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning --test --test-isolation=none scripts/test-four-android-fixes.mjs",
-    "test:learning-features": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning --test --test-isolation=none scripts/test-learning-features.mjs"
+    "test:learning-features": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning --test --test-isolation=none scripts/test-learning-features.mjs",
+    "test:audio-cache": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning --test --test-isolation=none scripts/test-audio-cache.mjs",
+    "test:audio-proxy": "node scripts/test-audio-proxy.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",

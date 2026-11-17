@@ -70,6 +70,12 @@ jobs:
         run: npm run test:four-android-fixes
       - name: "Test: learning features"
         run: npm run test:learning-features
+      - name: "Test: automatic offline audio cache"
+        run: npm run test:audio-cache
+      # Compiles and tests the Android native audio download path (pure Java) and parses MainActivity.java.
+      # Uses the JDK preinstalled on GitHub's Ubuntu runners.
+      - name: "Test: Android audio download path (Java)"
+        run: npm run test:audio-proxy
 
       # The validator exits 2 whenever differences from the King Fahd Complex reference
       # exist. Exactly two known, documented differences are expected: 2:72 and 11:41.
