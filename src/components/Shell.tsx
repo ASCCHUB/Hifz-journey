@@ -13,6 +13,7 @@ import { AudioBar, AudioProvider } from "./Audio";
 import { SaveBanner } from "./SaveStatus";
 import SearchDialog from "./SearchDialog";
 import PageTopBar from "./PageTopBar";
+import { ScreenAwakeController } from "./ScreenAwake";
 
 const UserCtx = createContext<User | null>(null);
 export const useUser = () => useContext(UserCtx);
@@ -140,6 +141,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   return (
     <UserCtx.Provider value={user}>
       <AudioProvider>
+        <ScreenAwakeController />
         <SaveBanner />
         <nav aria-label="Main" className="hidden lg:flex fixed inset-y-0 left-0 w-[220px] flex-col gap-1 border-r border-line bg-surface p-4 z-20">
           <div className="px-3 py-4 text-lg font-bold text-accent">Hifz Journey</div>
