@@ -49,6 +49,18 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [showMore, setShowMore] = useState(false);
   const [showTopMore, setShowTopMore] = useState(false);
+  // A tap on the Quran/page outside an open menu dismisses it without changing location.
+  useEffect(() => {
+    const dismiss = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (!target.closest(".page-topbar-more, .page-topbar-menu")) setShowTopMore(false);
+      if (!target.closest("nav[aria-label='Main'], .main-bottom-nav")) setShowMore(false);
+    };
+    document.addEventListener("pointerdown", dismiss);
+    return () => document.removeEventListener("pointerdown", dismiss);
+  }, []);
+
   const [showSearch, setShowSearch] = useState(false);
   const [mushafLearn, setMushafLearn] = useState(false);
   const [mushafRecall, setMushafRecall] = useState(false);
