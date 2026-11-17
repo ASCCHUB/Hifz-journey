@@ -1,0 +1,108 @@
+name: Hifz tests
+
+# Type-checks, runs the Node unit test suites, checks Quran text integrity and builds
+# the production Next.js app. Also called by android-debug.yml before an APK is built.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hifz-tests-${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Typecheck, tests, Quran integrity, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      # The test scripts import .ts files directly (Node type stripping) and use
+      # module.registerHooks and the unflagged --test-isolation=none option. Node 22 rejects
+      # --test-isolation ("bad option"), so Node 24 LTS is required.
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Show tool versions
+        run: node --version && npm --version
+
+      - name: Install dependencies (npm ci)
+        run: npm ci
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+      # Every Node test suite defined in package.json, except:
+      #  - test:journey: a name-filtered subset of test:hifz (would run the same tests twice)
+      #  - test:android-mushaf-ux: a Windows-only end-to-end check that drives Microsoft Edge
+      #    against a running local server; it is not a CI unit test.
+      - name: "Test: navigation"
+        run: npm run test:navigation
+      - name: "Test: hifz"
+        run: npm run test:hifz
+      - name: "Test: phase3"
+        run: npm run test:phase3
+      - name: "Test: storage"
+        run: npm run test:storage
+      - name: "Test: reference PDFs"
+        run: npm run test:refpdfs
+      - name: "Test: sync guard"
+        run: npm run test:sync-guard
+      - name: "Test: reference PDF learning"
+        run: npm run test:refpdf-learn
+      - name: "Test: mushaf recitation"
+        run: npm run test:mushaf-recitation
+      - name: "Test: local time"
+        run: npm run test:local-time
+      - name: "Test: four Android fixes"
+        run: npm run test:four-android-fixes
+      - name: "Test: learning features"
+        run: npm run test:learning-features
+
+      # The validator exits 2 whenever differences from the King Fahd Complex reference
+      # exist. Exactly two known, documented differences are expected: 2:72 and 11:41.
+      # This step passes only if the validator reports precisely those two and the committed
+      # CSV report is unchanged. Neither the Quran text nor the validator is modified.
+      - name: Quran integrity validation (expects only 2:72 and 11:41)
+        shell: bash
+        run: |
+          # Same command as "npm run validate:quran", run directly so its exit code is exact.
+          set +e
+          node ./scripts/validate-quran.mjs
+          code=$?
+          set -e
+          if [ "$code" -ne 2 ]; then
+            echo "::error title=Quran validator::validate-quran.mjs exited with $code (expected 2 = only the known reference differences). Exit 1 means a hash, count or order check failed."
+            exit 1
+          fi
+          node -e '
+            const fs = require("fs");
+            const lines = fs.readFileSync("scripts/quran-reference-differences.csv", "utf8").trim().split("\n").slice(1);
+            const found = lines.map((l) => { const m = l.match(/^"(\d+)","(\d+)"/); return m ? m[1] + ":" + m[2] : "unparsed"; }).sort();
+            const expected = ["11:41", "2:72"];
+            console.log("Reported differences: " + (found.join(", ") || "none"));
+            if (JSON.stringify(found) !== JSON.stringify(expected)) {
+              console.log("::error title=Quran validator::Expected exactly 2:72 and 11:41, got: " + (found.join(", ") || "none"));
+              process.exit(1);
+            }
+          '
+          if ! git diff --exit-code -- scripts/quran-reference-differences.csv; then
+            echo "::error title=Quran validator::The regenerated difference report differs from the committed scripts/quran-reference-differences.csv."
+            exit 1
+          fi
+          echo "Quran integrity: 114 Surahs / 6,236 ayahs compared; only the 2 known differences (2:72, 11:41)." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Production Next.js build
+        run: npm run build
