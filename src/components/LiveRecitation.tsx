@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAudio } from "@/components/Audio";
 import MiniMushafPage from "@/components/MiniMushafPage";
+import ControlIcon from "@/components/ControlIcon";
 import { installAndroidSpeech } from "@/lib/androidSpeech";
 
 // Direct /recite opens this component without the old passage picker; install the native microphone adapter here.
@@ -235,7 +236,7 @@ export default function LiveRecitation({ items, title, onClose, auto = false }: 
       </div>
       <button className={`btn btn-sm ${bookmarked ? "btn-on" : ""}`} aria-label={bookmarked ? "Remove bookmark" : "Bookmark this ayah"} title={`Bookmark ${ref(cur.s, cur.a)}`}
         onClick={() => update((d) => { if (d.bookmarks[bmKey]) delete d.bookmarks[bmKey]; else d.bookmarks[bmKey] = { t: Date.now(), f: 0 }; })}>{bookmarked ? "★" : "☆"}</button>
-      <button className={`btn btn-sm ${showSettings ? "btn-on" : ""}`} aria-label="Recitation settings" onClick={() => setShowSettings((v) => !v)}>⚙</button>
+      <button className={`btn btn-sm ${showSettings ? "btn-on" : ""}`} aria-label="Recitation settings" onClick={() => setShowSettings((v) => !v)}><ControlIcon name="settings" /></button>
     </header>
 
     {/* ---- settings / engine */}
@@ -333,13 +334,13 @@ export default function LiveRecitation({ items, title, onClose, auto = false }: 
         {latency !== null && <span className="ml-auto text-xs text-muted">{engine === "local" ? `model ${latency} ms` : ""}</span>}
       </div>
       <div className="flex items-center justify-between gap-2">
-        <button className="btn btn-sm" onClick={() => setHidden((v) => !v)} aria-label={hidden ? "Show Quran text" : "Hide Quran text"} aria-pressed={!hidden} title="Eye: show or hide Quran text"><span aria-hidden="true">👁</span> {hidden ? "Show" : "Hide"}</button>
+        <button className="btn btn-sm" onClick={() => setHidden((v) => !v)} aria-label={hidden ? "Show Quran text" : "Hide Quran text"} aria-pressed={!hidden} title="Eye: show or hide Quran text"><ControlIcon name={hidden ? "eye" : "eye-off"} /> {hidden ? "Show" : "Hide"}</button>
         {!auto && <div className="flex gap-1">
           <button className="btn btn-sm" disabled={status === "idle"} onClick={() => ayahStep(-1)} aria-label="Previous ayah">‹ Prev</button>
           <button className="btn btn-sm" disabled={status === "idle"} onClick={() => restartAt(cursor)} title="Recite the current ayah again">Retry ayah</button>
           <button className="btn btn-sm" disabled={status === "idle"} onClick={() => ayahStep(1)} aria-label="Next ayah">Next ›</button>
         </div>}
-        {status === "idle" && <button className="btn-primary" disabled={(engine === "local" && !health) || (engine === "browser" && !browserOk)} onClick={() => void start()}>🎙 Recite</button>}
+        {status === "idle" && <button className="btn-primary" disabled={(engine === "local" && !health) || (engine === "browser" && !browserOk)} onClick={() => void start()}><ControlIcon name="mic" /> Recite</button>}
         {status === "starting" && <button className="btn-primary" disabled>Starting…</button>}
         {listening && <button className="btn-primary" onClick={pause}>❚❚ Pause</button>}
         {status === "paused" && <button className="btn-primary" onClick={() => void resume()}>● Resume</button>}

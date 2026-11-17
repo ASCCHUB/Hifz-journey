@@ -335,7 +335,7 @@ html.lesson-focus .practice-actions { bottom: 0; padding-bottom: max(.75rem, env
 
 /* Recall teaching dock (Mushaf Recall): instruction, Hint / Reveal and ratings stay at the bottom, under the page.
    The page keeps its place; the current Ayah is kept above the dock by keepAboveDock(). */
-.mushaf-root:not(.mushaf-root-focus):not(.mushaf-root-reciting) > .mushaf-recall-dock { order: 2; position: sticky; bottom: 0; z-index: 15; margin: 0; padding: .7rem .8rem max(.7rem, env(safe-area-inset-bottom)); gap: .45rem; border-radius: 1rem 1rem 0 0; box-shadow: 0 -8px 24px color-mix(in srgb, var(--ink) 14%, transparent); }
+.mushaf-root:not(.mushaf-root-focus):not(.mushaf-root-reciting) > .mushaf-recall-dock { order: 2; position: fixed; right: max(.65rem, env(safe-area-inset-right)); bottom: max(.65rem, env(safe-area-inset-bottom)); width: min(94vw, 560px); z-index: 35; margin: 0; padding: .7rem .8rem max(.7rem, env(safe-area-inset-bottom)); gap: .45rem; border-radius: 1rem; background: var(--surface); box-shadow: 0 -8px 24px color-mix(in srgb, var(--ink) 14%, transparent); }
 .mushaf-recall-dock .btn, .mushaf-recall-dock .btn-primary { min-height: 44px; font-size: .9rem; line-height: 1.15; }
 
 /* Long-press quick sheet: the held Ayah stays marked; no text-selection callout on touch screens. */
@@ -375,3 +375,40 @@ html.lesson-focus .practice-actions { bottom: 0; padding-bottom: max(.75rem, env
 .mushaf-location-topbar select { min-height: 44px; }
 @media (max-width: 480px) { .mushaf-location-topbar { gap: .35rem; padding: .4rem; } .mushaf-location-topbar > label { min-width: 4.7rem; } }
 @media (max-width: 820px), (max-height: 480px) and (max-width: 1000px) { html.guided-mushaf-lesson .mushaf-location-topbar { display: none !important; } }
+
+/* Always-reachable study command bar: remains pinned while the Mushaf scrolls.
+   Optional panels collapse on an outside tap; the actual learning/rating bar never disappears.
+   The user's Move handle still wins via inline position when dock is dragged. */
+.mushaf-learning-columns > .mushaf-lesson-panel {
+  position: fixed;
+  z-index: 35;
+  right: max(.65rem, env(safe-area-inset-right));
+  bottom: calc(80px + env(safe-area-inset-bottom));
+  left: auto;
+  width: min(94vw, 440px);
+  max-height: min(65dvh, 600px);
+  overflow-y: auto;
+  border-radius: 1rem;
+  background: var(--surface);
+  box-shadow: 0 -8px 30px color-mix(in srgb, var(--ink) 16%, transparent);
+}
+.mushaf-learning-columns > .mushaf-lesson-panel[data-moved="true"],
+html.guided-mushaf-lesson .mushaf-lesson-panel[data-moved="true"] {
+  right: auto;
+  bottom: auto;
+}
+.mushaf-root > .mushaf-recall-dock[data-moved="true"], 
+.mushaf-reading-dock[data-moved="true"] { right: auto; bottom: auto; }
+@media (max-width: 820px) {
+  .mushaf-learning-columns > .mushaf-lesson-panel {
+    max-width: calc(100vw - 1.3rem);
+    max-height: min(48dvh, 440px);
+  }
+  .mushaf-root:not(.mushaf-root-focus):not(.mushaf-root-reciting) > .mushaf-recall-dock {
+    left: .45rem;
+    right: .45rem;
+    width: auto;
+    max-height: min(48dvh, 385px);
+  }
+  .mushaf-root > .mushaf-recall-dock[data-moved="true"] { left: auto; right: auto; }
+}

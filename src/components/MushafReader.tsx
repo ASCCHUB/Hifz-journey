@@ -12,6 +12,7 @@ import LocationNavigator from "@/components/LocationNavigator";
 import { arNum, isValidAyah, juzOf, key, pageContent, pageOf, Q, ref, sarabic, sname, text } from "@/lib/quran";
 import { readerBackAction, scrollMotion } from "@/lib/readerMode";
 import { useMovableDock } from "@/lib/useMovableDock";
+import ControlIcon from "@/components/ControlIcon";
 import { addHist, logAdd, markRead, today, update, useStore } from "@/lib/store";
 import Link from "next/link";
 import { SaveLine } from "@/components/SaveStatus";
@@ -84,7 +85,7 @@ function MushafView({ reciteLanding = false }: { reciteLanding?: boolean }) {
     const dismiss = (event: PointerEvent) => {
       const t = event.target;
       if (!(t instanceof Element)) return;
-      if (!t.closest(".mushaf-toolbar")) setToolsOpen(false);
+      if (!t.closest(".mushaf-tools-button, .mushaf-tools-menu")) setToolsOpen(false);
       if (!t.closest(".mushaf-reading-dock")) setReadDockOpen(false);
       if (!t.closest(".mushaf-recall-dock")) setRecallExtras(false);
     };
@@ -350,7 +351,7 @@ function MushafView({ reciteLanding = false }: { reciteLanding?: boolean }) {
             {Array.from({ length: 604 }, (_, i) => <option key={i} value={i + 1}>{i + 1}</option>)}
           </select>
         </label>
-        <button type="button" className="btn btn-sm self-end" onClick={() => setShowLocationPicker(true)}>Go to Ayah</button>
+        <button type="button" className="btn btn-sm self-end" onClick={() => setShowLocationPicker(true)}><ControlIcon name="location" /> Go to Ayah</button>
       </nav>}
       <div className={`mushaf-header flex items-center gap-2 ${reciteLanding ? "mushaf-recite-header" : ""}`}>
         <div className="flex-1 min-w-0">
@@ -388,11 +389,11 @@ function MushafView({ reciteLanding = false }: { reciteLanding?: boolean }) {
       </div>}
 
       {mode === "read" && !readerFocus && !reciteLanding && <section
-        className="mushaf-reading-dock" style={readDock.style} aria-label="Movable reading controls">
+        className="mushaf-reading-dock" data-moved={readDock.moved} style={readDock.style} aria-label="Movable reading controls">
         <div className="flex flex-wrap items-center gap-1">
-          <button type="button" className="btn btn-sm" {...readDock.handle}>Move</button>
+          <button type="button" className="btn btn-sm" {...readDock.handle}><ControlIcon name="pin" /> Move</button>
           {readDock.moved && <button type="button" className="btn btn-sm" onClick={readDock.reset}>Reset</button>}
-          <button type="button" className="btn btn-sm" aria-expanded={readDockOpen} onClick={() => setReadDockOpen((v) => !v)}>{readDockOpen ? "Hide reading controls" : "Reading controls"}</button>
+          <button type="button" className="btn btn-sm" aria-expanded={readDockOpen} onClick={() => setReadDockOpen((v) => !v)}><ControlIcon name={readDockOpen ? "chevron-up" : "chevron-down"} /> {readDockOpen ? "Hide reading controls" : "Reading controls"}</button>
         </div>
         {readDockOpen && <div className="mt-2 flex flex-wrap gap-2">
           <span className="self-center text-sm font-semibold">Page {pg}</span>
@@ -425,9 +426,9 @@ function MushafView({ reciteLanding = false }: { reciteLanding?: boolean }) {
       {showLocationPicker && <LocationNavigator initial={c.first as [number, number]} onClose={() => setShowLocationPicker(false)} onOpen={(s, a) => router.replace(`/mushaf?s=${s}&a=${a}`)} />}
       {similarOf && <SimilarSheet s={similarOf[0]} a={similarOf[1]} onClose={() => setSimilarOf(null)} />}
       {similarOnPage > 0 && <p className="text-xs text-muted">{similarOnPage} Ayah{similarOnPage === 1 ? "" : "s"} on this page {similarOnPage === 1 ? "has" : "have"} listed similar Ayahs. In Recall, use the Similar Ayahs button; in Read, tap an Ayah.</p>}
-      {recall && <section style={saved === null ? recallDock.style : undefined} className={`card flex flex-col gap-2 ${saved === null ? "mushaf-recall-dock" : ""}`} aria-label="Recall this page" aria-live="polite">
+      {recall && <section style={saved === null ? recallDock.style : undefined} data-moved={recallDock.moved} className={`card flex flex-col gap-2 ${saved === null ? "mushaf-recall-dock" : ""}`} aria-label="Recall this page" aria-live="polite">
         {saved === null ? <>
-          <div className="flex flex-wrap items-center justify-between gap-2"><b>Recite page {pg} from memory</b><span className="text-sm text-muted">{rated} of {ayahs.length} rated</span><div className="flex flex-wrap gap-1"><button type="button" className="btn btn-sm" {...recallDock.handle}>Move</button>{recallDock.moved && <button type="button" className="btn btn-sm" onClick={recallDock.reset}>Reset</button>}<button type="button" className="btn btn-sm" aria-expanded={recallExtras} onClick={() => setRecallExtras((v) => !v)}>{recallExtras ? "Less" : "More"}</button></div></div>
+          <div className="flex flex-wrap items-center justify-between gap-2"><b>Recite page {pg} from memory</b><span className="text-sm text-muted">{rated} of {ayahs.length} rated</span><div className="flex flex-wrap gap-1"><button type="button" className="btn btn-sm" {...recallDock.handle}><ControlIcon name="pin" /> Move</button>{recallDock.moved && <button type="button" className="btn btn-sm" onClick={recallDock.reset}>Reset</button>}<button type="button" className="btn btn-sm" aria-expanded={recallExtras} onClick={() => setRecallExtras((v) => !v)}><ControlIcon name={recallExtras ? "chevron-up" : "chevron-down"} /> {recallExtras ? "Less" : "More"}</button></div></div>
           {cur && <>
             <p className="text-sm">Now: <b>{sname(cur[0])} {cur[1]}</b>. Recite it, then rate yourself honestly.</p>
             <div className="flex flex-wrap gap-2">
@@ -466,9 +467,9 @@ function MushafView({ reciteLanding = false }: { reciteLanding?: boolean }) {
             <input key={pg} type="number" min={1} max={604} defaultValue={pg} aria-label="Mushaf page number" className="field !w-[4.5rem] !py-1.5 text-center" onFocus={(e) => e.currentTarget.select()} onKeyDown={(e) => { if (e.key === "Enter") go(parseInt(e.currentTarget.value, 10) || pg, mem); }} onBlur={(e) => { const v = parseInt(e.target.value, 10); if (v && v !== pg) go(v, mem); }} />
           </label>
           <button className="btn btn-sm" disabled={pg >= 604} onClick={() => { if (mem) go(pg + 1, true); else { update((d) => markRead(d, pg)); go(pg + 1); } }} aria-label="Next Mushaf page">Next</button>
-          <button className={`btn btn-sm mushaf-tools-button ${toolsOpen ? "btn-on" : ""}`} aria-expanded={toolsOpen} onClick={() => setToolsOpen((v) => !v)}>Tools {toolsOpen ? "▴" : "▾"}</button>
+          <button className={`btn btn-sm mushaf-tools-button ${toolsOpen ? "btn-on" : ""}`} aria-expanded={toolsOpen} onClick={() => setToolsOpen((v) => !v)}><ControlIcon name="settings" /> Tools <ControlIcon name={toolsOpen ? "chevron-up" : "chevron-down"} /></button>
         </div>
-        {toolsOpen && <div className="flex flex-wrap gap-2 mt-2">
+        {toolsOpen && <div className="mushaf-tools-menu flex flex-wrap gap-2 mt-2">
         {mem && <button className="btn btn-sm btn-on" aria-pressed onClick={() => { setMem(false); setPtr(0); setMiss({}); setPeek(0); setFin(false); }}>Exit old memorize mode</button>}
         <Link className="btn btn-sm" href={`/quran?tab=page&page=${pg}`}>Page status</Link>
         <button className="btn btn-sm" onClick={() => setSearching(true)}>Search</button>

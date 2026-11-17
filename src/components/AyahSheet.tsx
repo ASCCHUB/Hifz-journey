@@ -6,6 +6,7 @@ import { fetchTafsir, key, loadSet, pageOf, ref, REMOTE_TAFSIR, SETS, text, type
 import { update, useStore } from "@/lib/store";
 import { useAudio } from "./Audio";
 import { Sheet } from "./Shell";
+import ControlIcon from "./ControlIcon";
 import SimilarSheet, { SimilarButton } from "./SimilarAyahs";
 
 const TR: SetName[] = ["tr-ur-maududi", "tr-ur-jalandhry", "tr-en-sahih"];
@@ -60,7 +61,7 @@ export default function AyahSheet({ s, a, onClose, onPractise }: { s: number; a:
         : tafState === "error" ? <p className="text-sm text-weak">This tafsir could not be loaded. It needs an internet connection.</p>
         : <div className={`card !overflow-visible whitespace-pre-wrap break-words leading-loose ${taf === "tafsir-ar-muyassar" ? "ar text-[19px]" : "ur text-[19px]"}`} dir="rtl" lang={taf === "tafsir-ar-muyassar" ? "ar" : "ur"} aria-label="Full tafsir text">{tafText}</div>)}
 
-      <button type="button" className="btn w-full" aria-expanded={showActions} aria-controls="ayah-sheet-actions" onClick={() => setShowActions((v) => !v)}>{showActions ? "Hide extra actions" : "Show bookmark, playback and learning actions"}</button>
+      <button type="button" className="btn w-full" aria-expanded={showActions} aria-controls="ayah-sheet-actions" onClick={() => setShowActions((v) => !v)}><ControlIcon name={showActions ? "chevron-up" : "chevron-down"} /> {showActions ? "Hide extra actions" : "Show bookmark, playback and learning actions"}</button>
       {showActions && <div id="ayah-sheet-actions" className="grid grid-cols-2 gap-2">
         <button className={`btn ${bm ? "btn-on" : ""}`} onClick={() => update((d) => { if (d.bookmarks[k]) delete d.bookmarks[k]; else d.bookmarks[k] = { t: Date.now(), f: 0 }; })}>{bm ? "Bookmarked" : "Bookmark"}</button>
         <button className={`btn ${bm?.f ? "btn-on" : ""}`} onClick={() => update((d) => { const b = d.bookmarks[k] || (d.bookmarks[k] = { t: Date.now(), f: 0 }); b.f = b.f ? 0 : 1; })}>{bm?.f ? "Favourite" : "Add to favourites"}</button>
