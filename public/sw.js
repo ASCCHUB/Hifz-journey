@@ -11,7 +11,7 @@ const STATIC = `static-${VERSION}`;
 const AUDIO = "quran-audio-v1"; // never deleted or renamed here: it holds the learner's saved recitation
 // Add the https origin of a licensed Urdu recording host here ONLY after it is configured in
 // src/lib/audioSources.ts (licence + verified Ayah mapping). Empty on purpose.
-const EXTRA_AUDIO_ORIGINS = [];
+const EXTRA_AUDIO_ORIGINS = ["https://cdn.islamic.network"];
 const CORE = ["/", "/mushaf", "/recite", "/memorize", "/profile", "/learn", "/assess", "/mind-maps", "/maps/manifest.json", "/maps/al-fatihah.json", "/maps/al-baqarah-1-5.json", "/maps/al-baqarah-21-29.json", "/data/quran.json", "/data/layout.json", "/data/juz.json", "/data/divisions.json", "/fonts/UthmanicHafs1Ver18.woff2", "/manifest.webmanifest", "/icons/icon-192.png", "/pdfjs/pdf.min.mjs", "/pdfjs/pdf.worker.min.mjs"];
 
 self.addEventListener("install", (e) => {
@@ -24,7 +24,7 @@ self.addEventListener("activate", (e) => {
 function isAyahAudio(url) {
   if (url.protocol === "https:" && url.hostname === "everyayah.com" && /^\/data\/.+\.mp3$/i.test(url.pathname)) return true;
   if (url.origin === self.location.origin && /^\/audio\/urdu-maududi\/.+\.(mp3|m4a|ogg)$/i.test(url.pathname)) return true;
-  return EXTRA_AUDIO_ORIGINS.includes(url.origin) && /\.(mp3|m4a|ogg)$/i.test(url.pathname);
+  return EXTRA_AUDIO_ORIGINS.includes(url.origin) && /^\/quran\/audio\/(32|40|48|64|128|192)\/ur\.khan\/[1-9][0-9]{0,3}\.mp3$/i.test(url.pathname);
 }
 
 // One "bytes=" range -> {start, end} (inclusive); null = serve the whole file; "invalid" = 416.
