@@ -33,6 +33,7 @@ test("Recite defaults to Quran-wide detection, hidden text, an eye toggle, detec
   assert.match(route, /<LiveRecitation auto items=\{allAyahs\}/);
   assert.match(route, /passagePicker \? <RecitePassage/);
   const c = await read("src/components/LiveRecitation.tsx");
+  assert.match(c, /installAndroidSpeech\(\)/, "Android WebView microphone adapter must load on the direct Recite route");
   for (const x of ["useState(auto)", "locate(exp, window)", "MiniMushafPage page={pg}", "data-testid=\"detected-mushaf-page\"", "text-weak !text-weak", "👁", "🎙 Recite", "not a confirmed mistake"]) assert.ok(c.includes(x), x);
   const mini = await read("src/components/MiniMushafPage.tsx");
   assert.match(mini, /wordClass\?: \(w: PageWord\) => string/);
