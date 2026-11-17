@@ -13,6 +13,7 @@ import { detectUrduVoice, pauseUrdu, resumeUrdu, speakUrdu, stopUrdu, type UrduV
 import { resolveUrduAudio, URDU_TTS_LABEL } from "@/lib/audioSources";
 import { pauseUrduRecording, playUrduRecording, resumeUrduRecording, stopUrduRecording } from "@/lib/urduRecording";
 import PersonalSurahRecording from "./PersonalSurahRecording";
+import { shamshadTrack, SHAMSHAD_NARRATOR, SHAMSHAD_SOURCE } from "@/lib/shamshadUrdu";
 import { RECITERS, useAudio } from "./Audio";
 import { Sheet } from "./Shell";
 
@@ -26,10 +27,10 @@ export default function AyahQuickSheet({ s, a, onClose }: { s: number; a: number
   const [showTr, setShowTr] = useState(false);
   const [tts, setTts] = useState<Tts>("idle"); const [voice, setVoice] = useState<UrduVoice | null>(null);
   const startedHere = useRef(false);
-  // A recording exists only for the Maududi translation, and only once a verified, licensed source is configured.
+  // Maududi registry stays guarded; Shamshad is a separately attributed audio edition.
   const urduChoice = set === "tr-ur-maududi" ? resolveUrduAudio(s, a) : null;
   const recording = urduChoice?.type === "recording" ? urduChoice : null;
-  const [urduMode, setUrduMode] = useState<"tts" | "recording">(recording ? "recording" : "tts"); // what plays (or played last)
+  const [urduMode, setUrduMode] = useState<"tts" | "recording">("recording"); // what plays (or played last)
   const [recNote, setRecNote] = useState("");
   const personalPlayer = useRef<HTMLAudioElement | null>(null);
   const recRun = useRef(0);
@@ -56,7 +57,7 @@ export default function AyahQuickSheet({ s, a, onClose }: { s: number; a: number
     personalPlayer.current?.pause();
     if (audio.playing) audio.toggle(); // one stream at a time: pause the recitation
     setRecNote("");
-    if (recording) {
+    {
       stopUrdu(); stopRecording();
       const my = ++recRun.current; const isCurrent = () => recRun.current === my;
       setUrduMode("recording"); setTts("checking");
@@ -66,7 +67,13 @@ export default function AyahQuickSheet({ s, a, onClose }: { s: number; a: number
         else if (ev === "end") setTts("done");
         else if (ev === "error") { recRun.current++; setRecNote("The recorded Urdu translation could not play, so the device voice is used instead."); void playTts(); }
       };
-      try { await playUrduRecording(recording.track, onRec); return; }
+      try {
+        const track = recording?.track ?? await shamshadTrack(s, a);
+        if (!isCurrent()) return;
+        await playUrduRecording(track, onRec);
+        if (isCurrent() && !recording) setRecNote(`Recorded Urdu voice: ${SHAMSHAD_NARRATOR} · ${SHAMSHAD_SOURCE}. This narration is separate from the displayed ${urdu} translation text.`);
+        return;
+      }
       catch (e) {
         if ((e as Error)?.name === "StaleAudioRequest" || !isCurrent()) return;
         recRun.current++;
@@ -113,10 +120,10 @@ export default function AyahQuickSheet({ s, a, onClose }: { s: number; a: number
             {tts === "speaking" || tts === "paused" ? <>
               {canPause && <button className="btn" onClick={togglePause}>{tts === "paused" ? "Resume" : "Pause"}</button>}
               <button className="btn" onClick={stopUrduHere}>Stop</button>
-            </> : <button className="btn flex-1" disabled={(!tr && !recording) || tts === "checking"} onClick={playUrdu}>{tts === "checking" ? (urduMode === "recording" ? "Loading recorded translation…" : "Checking Urdu voice…") : tts === "done" ? "Replay Urdu Translation" : "Play Urdu Translation"}</button>}
+            </> : <button className="btn flex-1" disabled={tts === "checking"} onClick={playUrdu}>{tts === "checking" ? (urduMode === "recording" ? "Loading recorded translation…" : "Checking Urdu voice…") : tts === "done" ? "Replay Urdu Translation" : "Play Urdu Translation"}</button>}
           </div>
-          {recording && urduMode === "recording" && tts !== "unavailable" && tts !== "failed"
-            ? <p className="text-xs text-muted" role="status" data-testid="urdu-audio-label">{recording.label.en} — translation audio, not Quran recitation.</p>
+          {urduMode === "recording" && tts !== "unavailable" && tts !== "failed"
+            ? <p className="text-xs text-muted" role="status" data-testid="urdu-audio-label">{recording?.label.en ?? `Urdu translation recording · ${SHAMSHAD_NARRATOR} (${SHAMSHAD_SOURCE}); not the same attribution as the displayed ${urdu} text`} — translation audio, not Quran recitation.</p>
             : <p className="text-xs text-muted" role="status" data-testid="urdu-audio-label"><span>{URDU_TTS_LABEL.en}.</span> <span className="ur" dir="rtl" lang="ur">{URDU_TTS_LABEL.ur}</span>{(tts === "speaking" || tts === "paused") && voice?.ok && !voice.canPause ? " Pause is not supported by this voice; use Stop and Replay." : ""}</p>}
           {recNote && <p className="text-xs text-muted" role="status">{recNote}</p>}
           {set === "tr-ur-maududi" && <PersonalSurahRecording surah={s} ayah={a} playerRef={personalPlayer}
