@@ -370,3 +370,8 @@ html.lesson-focus .practice-actions { bottom: 0; padding-bottom: max(.75rem, env
   .mushaf-recall-dock { max-height: min(48dvh, 385px); }
   .mushaf-recall-dock > div:first-child { gap: .35rem; }
 }
+
+/* Quran-first top navigation: always reachable in Read, but hidden during focused guided learning. */
+.mushaf-location-topbar select { min-height: 44px; }
+@media (max-width: 480px) { .mushaf-location-topbar { gap: .35rem; padding: .4rem; } .mushaf-location-topbar > label { min-width: 4.7rem; } }
+@media (max-width: 820px), (max-height: 480px) and (max-width: 1000px) { html.guided-mushaf-lesson .mushaf-location-topbar { display: none !important; } }
