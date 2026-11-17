@@ -389,7 +389,7 @@ function MushafView({ reciteLanding = false }: { reciteLanding?: boolean }) {
       </div>}
 
       {mode === "read" && !readerFocus && !reciteLanding && <section
-        className="mushaf-reading-dock" style={readDock.style} aria-label="Movable reading controls">
+        className="mushaf-reading-dock" data-moved={readDock.moved} style={readDock.style} aria-label="Movable reading controls">
         <div className="flex flex-wrap items-center gap-1">
           <button type="button" className="btn btn-sm" {...readDock.handle}><ControlIcon name="pin" /> Move</button>
           {readDock.moved && <button type="button" className="btn btn-sm" onClick={readDock.reset}>Reset</button>}
@@ -426,7 +426,7 @@ function MushafView({ reciteLanding = false }: { reciteLanding?: boolean }) {
       {showLocationPicker && <LocationNavigator initial={c.first as [number, number]} onClose={() => setShowLocationPicker(false)} onOpen={(s, a) => router.replace(`/mushaf?s=${s}&a=${a}`)} />}
       {similarOf && <SimilarSheet s={similarOf[0]} a={similarOf[1]} onClose={() => setSimilarOf(null)} />}
       {similarOnPage > 0 && <p className="text-xs text-muted">{similarOnPage} Ayah{similarOnPage === 1 ? "" : "s"} on this page {similarOnPage === 1 ? "has" : "have"} listed similar Ayahs. In Recall, use the Similar Ayahs button; in Read, tap an Ayah.</p>}
-      {recall && <section style={saved === null ? recallDock.style : undefined} className={`card flex flex-col gap-2 ${saved === null ? "mushaf-recall-dock" : ""}`} aria-label="Recall this page" aria-live="polite">
+      {recall && <section style={saved === null ? recallDock.style : undefined} data-moved={recallDock.moved} className={`card flex flex-col gap-2 ${saved === null ? "mushaf-recall-dock" : ""}`} aria-label="Recall this page" aria-live="polite">
         {saved === null ? <>
           <div className="flex flex-wrap items-center justify-between gap-2"><b>Recite page {pg} from memory</b><span className="text-sm text-muted">{rated} of {ayahs.length} rated</span><div className="flex flex-wrap gap-1"><button type="button" className="btn btn-sm" {...recallDock.handle}><ControlIcon name="pin" /> Move</button>{recallDock.moved && <button type="button" className="btn btn-sm" onClick={recallDock.reset}>Reset</button>}<button type="button" className="btn btn-sm" aria-expanded={recallExtras} onClick={() => setRecallExtras((v) => !v)}><ControlIcon name={recallExtras ? "chevron-up" : "chevron-down"} /> {recallExtras ? "Less" : "More"}</button></div></div>
           {cur && <>
