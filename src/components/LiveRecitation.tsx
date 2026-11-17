@@ -3,6 +3,7 @@
 // Recognition can be wrong. Every flagged word is a suspicion until the user confirms it; nothing here edits the Quran text.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAudio } from "@/components/Audio";
+import MiniMushafPage from "@/components/MiniMushafPage";
 import { arNum, juzOf, key, pageOf, ref, sarabic, sname, words } from "@/lib/quran";
 import { align, buildExpected, summarize, type Alignment, type ExpStatus, type HeardResult, type HeardToken, type Verdict } from "@/lib/recitationAlign";
 import { browserSpeechAvailable, checkLocalAsr, createSession, DEFAULT_ASR_URL, getAsrUrl, playPcm, setAsrUrl, type AsrHealth, type AsrSession, type EngineKind, type FinalSegment } from "@/lib/quranAsr";
@@ -36,7 +37,7 @@ export default function LiveRecitation({ items, title, onClose, auto = false }: 
   const [runs, setRuns] = useState<Run[]>(initialRuns);
   const [verdicts, setVerdicts] = useState<Record<number, Verdict>>({});
   const [selected, setSelected] = useState<number | null>(null);
-  const [hidden, setHidden] = useState(false);
+  const [hidden, setHidden] = useState(auto);
   const [keepAudio, setKeepAudio] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [error, setError] = useState("");
@@ -125,6 +126,7 @@ export default function LiveRecitation({ items, title, onClose, auto = false }: 
 
   // ---- engine control
   const start = async () => {
+    if (auto) setHidden(true); // memory test: text hides immediately after Recite is pressed
     setError(""); setStatus("starting");
     const base = segIdBase.current;
     const s = createSession(engine, {
@@ -184,6 +186,13 @@ export default function LiveRecitation({ items, title, onClose, auto = false }: 
 
   // ---- view helpers
   const pg = pageOf(cur.s, cur.a), juz = juzOf(cur.s, cur.a), bmKey = key(cur.s, cur.a), bookmarked = !!st.bookmarks[bmKey];
+  // Align the recognized word states back to the original fixed 15-line Quran page.
+  // These are advisory speech-recognition results, not confirmed Tajweed or Hifz grading.
+  const visibleWordIndex = useMemo(() => {
+    const index = new Map<string, number>();
+    if (auto && runs.length) exp.forEach((w, i) => { if (pageOf(w.s, w.a) === pg) index.set(`${w.s}:${w.a}:${w.w}`, i); });
+    return index;
+  }, [auto, runs.length, exp, pg]);
   const mistakes = summary.incorrect + summary.missing;
   const listening = status === "listening";
   const ayahsInfo = useMemo(() => status === "stopped" ? assessAyahs(exp, merged, verdicts) : {}, [status, exp, merged, verdicts]);
@@ -226,7 +235,7 @@ export default function LiveRecitation({ items, title, onClose, auto = false }: 
     </header>
 
     {/* ---- settings / engine */}
-    {(showSettings || status === "idle") && <section className="m-3 card flex flex-col gap-3 text-sm">
+    {showSettings && <section className="m-3 card flex flex-col gap-3 text-sm">
       <div className="font-bold">Speech recognition</div>
       <label className={`flex items-start gap-2 rounded-xl border p-3 ${engine === "local" ? "border-accent bg-accent-soft/50" : "border-line"}`}>
         <input type="radio" name="engine" className="mt-1" checked={engine === "local"} disabled={!health || status !== "idle"} onChange={() => setEngine("local")} />
@@ -258,7 +267,29 @@ export default function LiveRecitation({ items, title, onClose, auto = false }: 
     {/* ---- Quran text */}
     <main className="flex-1 overflow-auto px-3 py-4">
       {auto && !runs.length && status !== "stopped" && <p className="mt-10 text-center text-muted">{status === "idle" ? "Press Start, then recite any ayah from memory. The text appears once your place is found." : "Listening… after a few words your place in the Quran will appear here."}</p>}
-      {merged.ranges.map(([from, to], ri) => <p key={`${from}-${ri}`} className={`q text-[26px] leading-[2.35] sm:text-[31px] ${ri ? "mt-6 border-t border-line pt-4" : ""}`} dir="rtl">
+      {auto && runs.length > 0 && <div className="mx-auto max-w-3xl" aria-label={`Detected Mushaf page ${pg}`} data-testid="detected-mushaf-page">
+        <MiniMushafPage page={pg} active={`${cur.s}:${cur.a}`}
+          state={(f) => {
+            const i = visibleWordIndex.get(`${f.s}:${f.a}:${f.w}`);
+            if (i === undefined) return hidden ? "hide" : "show";
+            return hidden && merged.exp[i] === "pending" && status !== "stopped" ? "hide" : "show";
+          }}
+          wordClass={(f) => {
+            const i = visibleWordIndex.get(`${f.s}:${f.a}:${f.w}`);
+            if (i === undefined) return "";
+            const result = merged.exp[i];
+            return verdicts[i] === "dismissed" ? "text-strong" :
+              result === "incorrect" ? "text-weak !text-weak bg-weak/15 rounded" :
+              result === "missing" || result === "uncertain" ? "text-revise bg-revise/15 rounded" :
+              result === "correct" ? "text-strong" : "";
+          }}
+          onAyah={(s, a) => {
+            const i = exp.findIndex((w) => w.s === s && w.a === a && w.w === 0);
+            if (i >= 0 && (status === "listening" || status === "paused")) restartAt(i);
+          }}/>
+        <p className="mt-2 text-center text-xs text-muted">Page ${pg} · Matching words appear as you recite. <span className="text-weak">Red = possible mismatch</span>, not a confirmed mistake.</p>
+      </div>}
+      {!auto && merged.ranges.map(([from, to], ri) => <p key={`${from}-${ri}`} className={`q text-[26px] leading-[2.35] sm:text-[31px] ${ri ? "mt-6 border-t border-line pt-4" : ""}`} dir="rtl">
         {auto && <span className="mb-2 block text-center font-ui text-sm text-muted" dir="ltr">{sname(exp[from].s)} · from ayah {exp[from].a}</span>}
         {exp.slice(from, to + 1).map((w, k) => {
           const i = from + k;
@@ -301,13 +332,13 @@ export default function LiveRecitation({ items, title, onClose, auto = false }: 
         {latency !== null && <span className="ml-auto text-xs text-muted">{engine === "local" ? `model ${latency} ms` : ""}</span>}
       </div>
       <div className="flex items-center justify-between gap-2">
-        <button className="btn btn-sm" onClick={() => setHidden((v) => !v)} aria-pressed={hidden} title="Show or hide the Quran text">{hidden ? "Show text" : "Hide text"}</button>
-        <div className="flex gap-1">
+        <button className="btn btn-sm" onClick={() => setHidden((v) => !v)} aria-label={hidden ? "Show Quran text" : "Hide Quran text"} aria-pressed={!hidden} title="Eye: show or hide Quran text"><span aria-hidden="true">👁</span> {hidden ? "Show" : "Hide"}</button>
+        {!auto && <div className="flex gap-1">
           <button className="btn btn-sm" disabled={status === "idle"} onClick={() => ayahStep(-1)} aria-label="Previous ayah">‹ Prev</button>
           <button className="btn btn-sm" disabled={status === "idle"} onClick={() => restartAt(cursor)} title="Recite the current ayah again">Retry ayah</button>
           <button className="btn btn-sm" disabled={status === "idle"} onClick={() => ayahStep(1)} aria-label="Next ayah">Next ›</button>
-        </div>
-        {status === "idle" && <button className="btn-primary" disabled={(engine === "local" && !health) || (engine === "browser" && !browserOk)} onClick={() => void start()}>● Start</button>}
+        </div>}
+        {status === "idle" && <button className="btn-primary" disabled={(engine === "local" && !health) || (engine === "browser" && !browserOk)} onClick={() => void start()}>🎙 Recite</button>}
         {status === "starting" && <button className="btn-primary" disabled>Starting…</button>}
         {listening && <button className="btn-primary" onClick={pause}>❚❚ Pause</button>}
         {status === "paused" && <button className="btn-primary" onClick={() => void resume()}>● Resume</button>}
