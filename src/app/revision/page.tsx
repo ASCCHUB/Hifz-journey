@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import EmptyState from "@/components/EmptyState";
 import Practice from "@/components/Practice";
+import ManualRevisionPicker from "@/components/ManualRevisionPicker";
 import TodayPlan from "@/components/TodayPlan";
 import { claimedAyahs } from "@/lib/coverage";
 import { buildPlan } from "@/lib/planner";
@@ -19,6 +20,7 @@ export default function RevisionPage() {
   const st = useStore();
   const [ready, setReady] = useState(false);
   const [running, setRunning] = useState<RevisionItem | null>(null);
+  const [manual, setManual] = useState<{ items: [number, number][]; title: string } | null>(null);
   const [full, setFull] = useState(false);
   // Opening the screen starts a revision session: carried-over items first, then top up to two.
   // Wait for the stored records to be fully loaded first, so the pair is never chosen from a partial copy.
@@ -29,13 +31,15 @@ export default function RevisionPage() {
   const claimedKeys = [...claimedAyahs(st).keys()].filter((k) => !st.mem[k]);
   const practised = Object.keys(st.mem).length > 0;
 
+  if (manual) return <Practice items={manual.items} title={manual.title} kind="rev" onClose={() => setManual(null)} />;
   if (running) return <Practice items={running.ayahs} title={`Page ${running.page} · ${KIND[running.kind] || "Revision"}`} kind={running.kind === "weak" ? "weak" : "rev"}
     onClose={() => setRunning(null)} onComplete={() => update((d) => completeRevisionItem(d, running.id, "app"))} />;
 
-  if (!practised && claimedKeys.length === 0) return <EmptyState title="Nothing to revise yet" body="Ayahs you learn and recite here come back for revision on a spaced schedule." href="/learn" action="Learn a passage" />;
   if (!ready) return <div className="card text-sm text-muted" role="status">Opening your revision…</div>;
 
   return <div className="revision-screen flex flex-col gap-3">
+    <ManualRevisionPicker onStart={(items, title) => setManual({ items, title })} />
+    {!practised && claimedKeys.length === 0 && <EmptyState title="No scheduled revision yet" body="You can still revise any Quran passage manually above, or learn a new passage." href="/learn" action="Learn a passage" />}
     {pair.length > 0 ? <ol className="flex flex-col gap-2" aria-label="Pending revision">
       {pair.map((t) => { const first = t.ayahs[0];
         return <li key={t.id} className="revision-task card flex flex-col gap-2 !p-3.5" data-testid="revision-task">
