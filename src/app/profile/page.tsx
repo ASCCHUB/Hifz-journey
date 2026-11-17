@@ -4,6 +4,7 @@ import BuildInfo from "@/components/BuildInfo";
 import DownloadedAudioSettings from "@/components/DownloadedAudioSettings";
 import ReminderSettings from "@/components/ReminderSettings";
 import SettingsGroup from "@/components/SettingsGroup";
+import { ScreenAwakeSetting } from "@/components/ScreenAwake";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { RECITERS } from "@/components/Audio";
@@ -96,7 +97,8 @@ export default function ProfilePage() {
         <span aria-hidden="true" className="text-xl text-muted">›</span>
       </Link>
 
-      <SettingsGroup title="Appearance" summary="Theme, translation, reciter, daily reading">
+      <SettingsGroup title="Appearance" summary="Theme, translation, reciter, screen awake, daily reading">
+        <ScreenAwakeSetting />
       <div className="flex flex-col gap-3">
         <label className="text-sm text-muted">Appearance
           <select className="field mt-1" value={st.settings.theme} onChange={(e) => update((d) => { d.settings.theme = e.target.value as AppState["settings"]["theme"]; })}><option value="auto">Match my device</option><option value="light">Light</option><option value="dark">Dark</option></select>
