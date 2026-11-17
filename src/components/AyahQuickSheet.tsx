@@ -12,6 +12,7 @@ import { update, useStore } from "@/lib/store";
 import { detectUrduVoice, pauseUrdu, resumeUrdu, speakUrdu, stopUrdu, type UrduVoice } from "@/lib/urduSpeech";
 import { resolveUrduAudio, URDU_TTS_LABEL } from "@/lib/audioSources";
 import { pauseUrduRecording, playUrduRecording, resumeUrduRecording, stopUrduRecording } from "@/lib/urduRecording";
+import { deletePersonalSurahAudio, getPersonalSurahAudio, savePersonalSurahAudio } from "@/lib/personalSurahAudio";
 import { RECITERS, useAudio } from "./Audio";
 import { Sheet } from "./Shell";
 
@@ -30,6 +31,51 @@ export default function AyahQuickSheet({ s, a, onClose }: { s: number; a: number
   const recording = urduChoice?.type === "recording" ? urduChoice : null;
   const [urduMode, setUrduMode] = useState<"tts" | "recording">(recording ? "recording" : "tts"); // what plays (or played last)
   const [recNote, setRecNote] = useState("");
+  // Files selected by the user are stored privately and remain available offline.
+  // These are entire Surah recordings, NOT verified Ayah-aligned tracks.
+  const personalPlayer = useRef<HTMLAudioElement | null>(null);
+  const [personalRevision, setPersonalRevision] = useState(0);
+  const [personalURL, setPersonalURL] = useState("");
+  const [personalName, setPersonalName] = useState("");
+  const [personalError, setPersonalError] = useState("");
+  const [personalBusy, setPersonalBusy] = useState(false);
+  useEffect(() => {
+    let active = true;
+    let url = "";
+    setPersonalURL(""); setPersonalName("");
+    getPersonalSurahAudio(s).then((record) => {
+      if (!active || !record) return;
+      url = URL.createObjectURL(record.blob);
+      setPersonalURL(url);
+      setPersonalName(record.name);
+    }).catch(() => { if (active) setPersonalError("Saved Surah audio cannot be opened on this device."); });
+    return () => {
+      active = false;
+      personalPlayer.current?.pause();
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [s, personalRevision]);
+  const importPersonal = async (file?: File) => {
+    if (!file) return;
+    setPersonalBusy(true); setPersonalError("");
+    try {
+      personalPlayer.current?.pause();
+      await savePersonalSurahAudio(s, file);
+      setPersonalRevision((n) => n + 1);
+    } catch (e) {
+      setPersonalError((e as Error).message || "Unable to import Surah recording.");
+    } finally { setPersonalBusy(false); }
+  };
+  const removePersonal = async () => {
+    setPersonalBusy(true); setPersonalError("");
+    try {
+      personalPlayer.current?.pause();
+      await deletePersonalSurahAudio(s);
+      setPersonalRevision((n) => n + 1);
+    } catch (e) { setPersonalError((e as Error).message || "Unable to remove this recording."); }
+    finally { setPersonalBusy(false); }
+  };
+
   const recRun = useRef(0);
   const stopRecording = () => { recRun.current++; stopUrduRecording(); };
 
@@ -48,9 +94,10 @@ export default function AyahQuickSheet({ s, a, onClose }: { s: number; a: number
 
   const mine = !!audio.cur && audio.cur[0] === s && audio.cur[1] === a;
   const arabicState = mine ? (audio.playing ? "playing" : "paused") : "idle";
-  const playArabic = () => { stopUrdu(); stopRecording(); setTts((t) => (t === "speaking" || t === "paused" ? "idle" : t)); startedHere.current = true; audio.play(s, a, { s, a, b: a }); };
+  const playArabic = () => { personalPlayer.current?.pause(); stopUrdu(); stopRecording(); setTts((t) => (t === "speaking" || t === "paused" ? "idle" : t)); startedHere.current = true; audio.play(s, a, { s, a, b: a }); };
 
   const playUrdu = async () => {
+    personalPlayer.current?.pause();
     if (audio.playing) audio.toggle(); // one stream at a time: pause the recitation
     setRecNote("");
     if (recording) {
@@ -116,6 +163,28 @@ export default function AyahQuickSheet({ s, a, onClose }: { s: number; a: number
             ? <p className="text-xs text-muted" role="status" data-testid="urdu-audio-label">{recording.label.en} — translation audio, not Quran recitation.</p>
             : <p className="text-xs text-muted" role="status" data-testid="urdu-audio-label"><span>{URDU_TTS_LABEL.en}.</span> <span className="ur" dir="rtl" lang="ur">{URDU_TTS_LABEL.ur}</span>{(tts === "speaking" || tts === "paused") && voice?.ok && !voice.canPause ? " Pause is not supported by this voice; use Stop and Replay." : ""}</p>}
           {recNote && <p className="text-xs text-muted" role="status">{recNote}</p>}
+          {set === "tr-ur-maududi" && <div className="grid gap-2 border-t border-line pt-3" aria-label="Personal Surah recording">
+            <p className="text-sm font-medium">My recorded Maududi translation — whole Surah {s}</p>
+            <p className="text-xs text-muted">Choose an MP3, M4A or OGG file you obtained lawfully. It is saved only on this device and plays offline. This is a whole-Surah recording; it does not start at Ayah {a} or replace the Ayah translation button.</p>
+            <label className="btn text-center">
+              {personalBusy ? "Saving recording…" : personalName ? "Replace my Surah recording" : "Import my Surah recording"}
+              <input type="file" className="sr-only" accept=".mp3,.m4a,.ogg,audio/mpeg,audio/mp4,audio/ogg"
+                disabled={personalBusy} onChange={(e) => {
+                  const file = e.currentTarget.files?.[0];
+                  e.currentTarget.value = "";
+                  void importPersonal(file);
+                }}/>
+            </label>
+            {personalURL && <>
+              <p className="text-xs text-muted">Saved offline: {personalName}</p>
+              <audio ref={personalPlayer} controls preload="metadata" src={personalURL} className="w-full"
+                aria-label="Play my saved whole-Surah Urdu recording"
+                onPlay={() => { stopUrdu(); stopRecording(); if (audio.playing) audio.toggle(); }}/>
+              <button className="btn btn-sm" disabled={personalBusy} onClick={() => { void removePersonal(); }}>Remove this Surah recording</button>
+            </>}
+            {personalError && <p role="alert" className="text-sm text-weak">{personalError}</p>}
+          </div>}
+
           {tts === "unavailable" && voice && !voice.ok && <p className="text-sm text-muted" role="status">{voice.reason}</p>}
           {tts === "failed" && <p className="text-sm text-weak" role="alert">The Urdu voice could not play this translation. You can read it below.</p>}
           {showTr && (trErr ? <p className="text-sm text-weak">The Urdu translation could not be loaded.</p>
