@@ -1,0 +1,75 @@
+{
+  "id": "al-baqarah-1-5",
+  "surah": 2,
+  "from": 1,
+  "to": 5,
+  "title": "Al-Baqarah · 1–5",
+  "subtitle": "The Book · guidance · qualities of the successful",
+  "emblem": "▤",
+  "nodes": [
+    {
+      "ayah": 1,
+      "cue": "Alif · Lam · Meem",
+      "symbol": "ا",
+      "color": "#c99438"
+    },
+    {
+      "ayah": 2,
+      "cue": "The Book · guidance",
+      "symbol": "▤",
+      "color": "#2f927b"
+    },
+    {
+      "ayah": 3,
+      "cue": "Unseen · prayer · provision",
+      "symbol": "☼",
+      "color": "#3887a5"
+    },
+    {
+      "ayah": 4,
+      "cue": "Revelation · certainty in the Hereafter",
+      "symbol": "✧",
+      "color": "#8a71b5"
+    },
+    {
+      "ayah": 5,
+      "cue": "Guidance · successful",
+      "symbol": "➜",
+      "color": "#4e9b62"
+    }
+  ],
+  "groups": [
+    {
+      "title": "Opening letters · the Book",
+      "ayahs": [
+        1,
+        2
+      ],
+      "color": "#62b985",
+      "symbol": "▤",
+      "motif": "book",
+      "quadrant": "ne"
+    },
+    {
+      "title": "Faith · prayer · revelation",
+      "ayahs": [
+        3,
+        4
+      ],
+      "color": "#eed900",
+      "symbol": "☼",
+      "motif": "rain",
+      "quadrant": "nw"
+    },
+    {
+      "title": "Guidance · success",
+      "ayahs": [
+        5
+      ],
+      "color": "#f29a00",
+      "symbol": "➜",
+      "motif": "compass",
+      "quadrant": "sw"
+    }
+  ]
+}

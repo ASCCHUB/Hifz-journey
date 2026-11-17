@@ -1,0 +1,54 @@
+node_modules
+.next
+.env.local
+next-env.d.ts
+*.tsbuildinfo
+android/local.properties
+
+/.next-test/
+/speech-server/.venv/
+/speech-server/model/
+/speech-server/model-ct2/
+
+/.next-build/
+/.next-phase31/
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# Android signing credentials
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+key.properties
+
+# Generated Android packages
+*.apk
+*.aab
+android/.gradle/
+android/**/build/
+
+# Temporary development output
+artifacts/
+tmp/
+*.log
+
+# Local backups
+backups/
+*.bak
+
+
+# All Next.js build and cache directories
+.next*/
+**/.next*/
+
+# Other generated outputs
+out/
+dist/
+coverage/
+*.tsbuildinfo
+

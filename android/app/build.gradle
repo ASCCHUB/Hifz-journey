@@ -1,0 +1,20 @@
+apply plugin: 'com.android.application'
+
+android {
+    namespace 'com.hifzcompanion'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'com.hifzcompanion'
+        minSdk 24
+        targetSdk 35
+        // Set by scripts/build-android.ps1 (increasing per build, so updates install in place); 1 for manual builds.
+        versionCode((project.findProperty('hifzVersionCode') ?: '1') as int)
+        versionName((project.findProperty('hifzVersionName') ?: '1.0') as String)
+    }
+    // aapt's default ignore list includes "<dir>_*", which silently dropped Next.js folders starting with "_"
+    // (e.g. _not-found, the _<buildId> manifests) from the APK. Keep the defaults except that rule.
+    androidResources {
+        ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+    }
+}

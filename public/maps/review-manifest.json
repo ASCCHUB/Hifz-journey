@@ -1,0 +1,58 @@
+{
+  "schema": 1,
+  "version": 1,
+  "approvalPolicy": {
+    "technicalValidationIsNotTeacherApproval": true,
+    "lessonEligibility": "status=teacher_reviewed AND named reviewer AND valid review date AND permissionStatus=cleared AND technicalStatus=technically_valid AND no outstanding issues AND exact canonical range match",
+    "pdfImport": "Do not copy, extract, adapt, publish, or package source PDFs until redistribution/adaptation permission and Quranic accuracy are reviewed."
+  },
+  "maps": [
+    {
+      "id": "al-fatihah",
+      "ayahCoverage": { "surah": 1, "from": 1, "to": 7 },
+      "status": "awaiting_review",
+      "reviewer": null,
+      "reviewedAt": null,
+      "sourceAttribution": "App-authored summary cues; Quran text is rendered from the bundled QuranEnc quran-json snapshot (pinned KFGQPC v2.0 comparison). Existing display translations: Saheeh International (English), Fateh Muhammad Jalandhry (Urdu); Tafsir display: Al-Tafsir Al-Muyassar, King Fahd Complex.",
+      "permissionStatus": "unresolved",
+      "technicalStatus": "technically_valid",
+      "outstandingIssues": [
+        "Teacher/scholar must verify the meaning and completeness of every cue and group label against trusted sources.",
+        "The last branch mentions the favored path and those astray but does not explicitly represent those who incurred anger; assess whether this omission is misleading.",
+        "Confirm authorship and redistribution/adaptation rights for the app-authored labels and any visual assets before lesson use."
+      ]
+    },
+    {
+      "id": "al-baqarah-1-5",
+      "ayahCoverage": { "surah": 2, "from": 1, "to": 5 },
+      "status": "awaiting_review",
+      "reviewer": null,
+      "reviewedAt": null,
+      "sourceAttribution": "App-authored summary cues; Quran text is rendered from the bundled QuranEnc quran-json snapshot (pinned KFGQPC v2.0 comparison). Existing display translations: Saheeh International (English), Fateh Muhammad Jalandhry (Urdu); Tafsir display: Al-Tafsir Al-Muyassar, King Fahd Complex.",
+      "permissionStatus": "unresolved",
+      "technicalStatus": "technically_valid",
+      "outstandingIssues": [
+        "Teacher/scholar must verify all theological summaries, particularly the opening disconnected letters and the attributes grouped in Ayahs 3–5.",
+        "Ayah 4 cue names revelation and certainty in the Hereafter but omits belief in the revelation sent before; assess whether the compressed cue is sufficiently complete.",
+        "Confirm authorship and redistribution/adaptation rights for the app-authored labels and any visual assets before lesson use."
+      ]
+    },
+    {
+      "id": "al-baqarah-21-29",
+      "ayahCoverage": { "surah": 2, "from": 21, "to": 29 },
+      "status": "awaiting_review",
+      "reviewer": null,
+      "reviewedAt": null,
+      "sourceAttribution": "App-authored summary cues; Quran text is rendered from the bundled QuranEnc quran-json snapshot (pinned KFGQPC v2.0 comparison). Existing display translations: Saheeh International (English), Fateh Muhammad Jalandhry (Urdu); Tafsir display: Al-Tafsir Al-Muyassar, King Fahd Complex.",
+      "permissionStatus": "unresolved",
+      "technicalStatus": "technically_valid",
+      "outstandingIssues": [
+        "Teacher/scholar must review the grouping of challenge/warning, good news/example, covenant/return/heavens and ensure the sequence labels do not imply unsupported causal links.",
+        "Ayah 25 cue omits the purified spouses and permanence described in the verse; assess completeness for a memory cue.",
+        "Ayah 26 cue names the mosquito example but omits the response about guidance/misguidance; assess whether context is needed.",
+        "Ayah 29 cue compresses creation of what is on earth and the formation of seven heavens; verify wording and sequence.",
+        "Confirm authorship and redistribution/adaptation rights for the app-authored labels and any visual assets before lesson use."
+      ]
+    }
+  ]
+}

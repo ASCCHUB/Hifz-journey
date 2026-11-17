@@ -1,0 +1,43 @@
+{
+  "name": "hifz-companion",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "build:android": "powershell -ExecutionPolicy Bypass -File ./scripts/build-android.ps1",
+    "start": "next start",
+    "lint": "next lint",
+    "test:navigation": "node --disable-warning=ExperimentalWarning scripts/test-navigation.mjs",
+    "test:hifz": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test --test-isolation=none scripts/test-hifz.mjs",
+    "test:phase3": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning --test --test-isolation=none scripts/test-phase3.mjs",
+    "test:storage": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning --test --test-isolation=none scripts/test-storage.mjs",
+    "test:refpdfs": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning --test --test-isolation=none scripts/test-refpdfs.mjs",
+    "test:sync-guard": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning --test --test-isolation=none scripts/test-sync-guard.mjs",
+    "validate:quran": "node ./scripts/validate-quran.mjs",
+    "test:journey": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test --test-isolation=none --test-name-pattern=Journey scripts/test-hifz.mjs",
+    "test:refpdf-learn": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test --test-isolation=none scripts/test-refpdf-learn.mjs",
+    "test:mushaf-recitation": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test --test-isolation=none scripts/test-mushaf-recitation.mjs",
+    "test:android-mushaf-ux": "node scripts/test-android-mushaf-ux.mjs",
+    "test:local-time": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning --test --test-isolation=none scripts/test-local-time.mjs",
+    "test:four-android-fixes": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning --test --test-isolation=none scripts/test-four-android-fixes.mjs",
+    "test:learning-features": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning --test --test-isolation=none scripts/test-learning-features.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "adhan": "^4.4.3",
+    "next": "^14.2.15",
+    "pdfjs-dist": "4.10.38",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38",
+    "tailwindcss": "3.4.17",
+    "typescript": "^5.5.0"
+  }
+}

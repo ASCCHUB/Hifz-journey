@@ -1,0 +1,8 @@
+ctranslate2==4.5.0
+huggingface_hub==0.36.2
+numpy==2.5.4
+psutil==7.2.2
+soundfile==0.14.0
+tokenizers==0.20.3
+torch==2.15.0+cpu
+transformers==4.46.3

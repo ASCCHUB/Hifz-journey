@@ -1,0 +1,51 @@
+{
+  "schema": 1,
+  "version": 1,
+  "maps": [
+    {
+      "id": "al-fatihah",
+      "version": 1,
+      "title": "Surah Al-Fatihah",
+      "subtitle": "Praise · worship · the straight path",
+      "surah": 1,
+      "from": 1,
+      "to": 7,
+      "file": "maps/al-fatihah.json",
+      "source": "Hifz Companion original memory cues",
+      "license": "app-original",
+      "review": {
+        "status": "app_authored_unreviewed"
+      }
+    },
+    {
+      "id": "al-baqarah-1-5",
+      "version": 1,
+      "title": "Al-Baqarah · 1–5",
+      "subtitle": "The Book · guidance · qualities of the successful",
+      "surah": 2,
+      "from": 1,
+      "to": 5,
+      "file": "maps/al-baqarah-1-5.json",
+      "source": "Hifz Companion original memory cues",
+      "license": "app-original",
+      "review": {
+        "status": "app_authored_unreviewed"
+      }
+    },
+    {
+      "id": "al-baqarah-21-29",
+      "version": 1,
+      "title": "Al-Baqarah · 21–29",
+      "subtitle": "Worship · signs of creation · resurrection",
+      "surah": 2,
+      "from": 21,
+      "to": 29,
+      "file": "maps/al-baqarah-21-29.json",
+      "source": "Hifz Companion original memory cues",
+      "license": "app-original",
+      "review": {
+        "status": "app_authored_unreviewed"
+      }
+    }
+  ]
+}

@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Hifz Journey">
+  <defs>
+    <linearGradient id="field" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#061b2a"/>
+      <stop offset=".52" stop-color="#06372c"/>
+      <stop offset="1" stop-color="#06251f"/>
+    </linearGradient>
+    <linearGradient id="gold" x1=".15" y1="0" x2=".85" y2="1">
+      <stop stop-color="#fff1aa"/>
+      <stop offset=".28" stop-color="#e9bc50"/>
+      <stop offset=".62" stop-color="#c48622"/>
+      <stop offset="1" stop-color="#ffe28a"/>
+    </linearGradient>
+    <linearGradient id="page" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#fff9df"/>
+      <stop offset="1" stop-color="#ead99c"/>
+    </linearGradient>
+    <radialGradient id="glow">
+      <stop stop-color="#e7b944" stop-opacity=".36"/>
+      <stop offset="1" stop-color="#e7b944" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="stars" width="112" height="112" patternUnits="userSpaceOnUse">
+      <path d="M56 5 68 39 103 27 81 56 103 85 68 73 56 107 44 73 9 85 31 56 9 27 44 39Z" fill="none" stroke="#d3a43d" stroke-width="3" opacity=".18"/>
+      <circle cx="56" cy="56" r="5" fill="#d3a43d" opacity=".25"/>
+    </pattern>
+    <clipPath id="tile"><rect x="12" y="12" width="488" height="488" rx="112"/></clipPath>
+  </defs>
+
+  <g clip-path="url(#tile)">
+    <rect width="512" height="512" fill="url(#field)"/>
+    <path d="M22 30h468v170H22z" fill="url(#stars)"/>
+    <path d="M22 402q112-76 234 0 122-76 234 0v110H22z" fill="#021c19" opacity=".62"/>
+    <path d="M28 420q114-72 228 0 114-72 228 0M28 454q114-72 228 0 114-72 228 0" fill="none" stroke="#32815c" stroke-width="8" opacity=".24"/>
+
+    <!-- Mihrab arch -->
+    <path d="M71 461V269c0-36 21-66 57-81 44-18 88-15 128-77 40 62 84 59 128 77 36 15 57 45 57 81v192Z" fill="#04271f" stroke="url(#gold)" stroke-width="13" stroke-linejoin="round"/>
+    <path d="M91 450V274c0-30 17-52 47-64 45-18 84-18 118-62 34 44 73 44 118 62 30 12 47 34 47 64v176Z" fill="none" stroke="#d9aa3c" stroke-width="3" opacity=".38"/>
+
+    <!-- Soft light behind the Mushaf -->
+    <ellipse cx="265" cy="344" rx="175" ry="126" fill="url(#glow)"/>
+
+    <!-- Mosque silhouette behind the Mushaf -->
+    <path d="M163 322v-61h20v-47h12v-23h8v23h12v47h13v-16h16v-13h12v13h16v16h13v-47h12v-23h8v23h12v47h20v61Z" fill="#b57b20" stroke="#e8bd58" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M207 321v-72q0-49 49-75 49 26 49 75v72Z" fill="url(#gold)" stroke="#ffe79a" stroke-width="5"/>
+    <path d="M221 321v-66q0-35 35-57 35 22 35 57v66Z" fill="#0b4933" stroke="#a97420" stroke-width="4"/>
+    <path d="M225 322v-65q0-29 31-48 31 19 31 48v65Z" fill="#073326"/>
+    <path d="M236 321v-61q0-20 20-34 20 14 20 34v61Z" fill="#dca83c" opacity=".84"/>
+    <path d="M176 321v-52q0-19 13-30 13 11 13 30v52m121 0v-52q0-19 13-30 13 11 13 30v52" fill="#082b23" stroke="#f0c65e" stroke-width="4"/>
+    <path d="M184 320v-47q5-8 10 0v47m129 0v-47q5-8 10 0v47" fill="none" stroke="#e7bc54" stroke-width="4"/>
+    <path d="M256 183v-11" stroke="url(#gold)" stroke-width="6" stroke-linecap="round"/>
+    <path d="M262 108c-20 6-34 24-34 45 0 24 19 43 43 43 15 0 28-8 36-20-7 5-15 8-24 8-20 0-36-16-36-36 0-17 9-31 23-38-3-1-5-2-8-2Z" fill="url(#gold)" stroke="#fff0a0" stroke-width="3" stroke-linejoin="round"/>
+
+    <!-- Rehal -->
+    <path d="m166 377 85 71 16-9-72-76m146-4-72 80 17 9 85-71" fill="none" stroke="#a96b1d" stroke-width="17" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="m173 380 79 67m156-67-79 67" fill="none" stroke="url(#gold)" stroke-width="5" stroke-linecap="round"/>
+
+    <!-- Open Mushaf: warm pages with a strong central fold -->
+    <path d="M112 322q70-31 143 8v112q-72-41-143-8z" fill="#8c5418" stroke="#f1bd48" stroke-width="7" stroke-linejoin="round"/>
+    <path d="M399 322q-70-31-143 8v112q72-41 143-8z" fill="#8c5418" stroke="#f1bd48" stroke-width="7" stroke-linejoin="round"/>
+    <path d="M122 314q65-26 133 12v100q-67-35-133-6z" fill="url(#page)" stroke="#fff1b5" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M390 314q-65-26-133 12v100q67-35 133-6z" fill="url(#page)" stroke="#fff1b5" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M256 327v101" stroke="#b78228" stroke-width="5"/>
+    <path d="M139 326q48-14 100 10m-99 11q47-13 99 10m-98 12q44-11 92 9m-88 11q40-9 83 8M373 326q-48-14-100 10m99 11q-47-13-99 10m98 12q-44-11-92 9m88 11q-40-9-83 8" fill="none" stroke="#34714b" stroke-width="3" stroke-linecap="round" opacity=".78"/>
+    <path d="m256 321 8 12-8 12-8-12z" fill="url(#gold)"/>
+  </g>
+
+  <!-- Rounded gold frame -->
+  <rect x="13" y="13" width="486" height="486" rx="112" fill="none" stroke="#7b4a13" stroke-width="12"/>
+  <rect x="18" y="18" width="476" height="476" rx="108" fill="none" stroke="url(#gold)" stroke-width="9"/>
+  <rect x="27" y="27" width="458" height="458" rx="100" fill="none" stroke="#fff0ad" stroke-width="2" opacity=".72"/>
+</svg>

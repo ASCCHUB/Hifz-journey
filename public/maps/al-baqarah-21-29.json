@@ -1,0 +1,112 @@
+{
+  "id": "al-baqarah-21-29",
+  "surah": 2,
+  "from": 21,
+  "to": 29,
+  "title": "Al-Baqarah · 21–29",
+  "subtitle": "Worship · signs of creation · resurrection",
+  "emblem": "❋",
+  "nodes": [
+    {
+      "ayah": 21,
+      "cue": "Worship your Lord",
+      "symbol": "⌂",
+      "color": "#c99438"
+    },
+    {
+      "ayah": 22,
+      "cue": "Earth · sky · rain · provision",
+      "symbol": "☁",
+      "color": "#3887a5"
+    },
+    {
+      "ayah": 23,
+      "cue": "The challenge · bring a surah",
+      "symbol": "▤",
+      "color": "#8a71b5"
+    },
+    {
+      "ayah": 24,
+      "cue": "The warning of the Fire",
+      "symbol": "♨",
+      "color": "#c45c42"
+    },
+    {
+      "ayah": 25,
+      "cue": "Good news · gardens · rivers",
+      "symbol": "❀",
+      "color": "#4e9b62"
+    },
+    {
+      "ayah": 26,
+      "cue": "The example of a mosquito",
+      "symbol": "⟡",
+      "color": "#bf6a81"
+    },
+    {
+      "ayah": 27,
+      "cue": "Covenant · ties · corruption",
+      "symbol": "⛓",
+      "color": "#b7793f"
+    },
+    {
+      "ayah": 28,
+      "cue": "Life · death · return",
+      "symbol": "↻",
+      "color": "#2f927b"
+    },
+    {
+      "ayah": 29,
+      "cue": "The earth · seven heavens",
+      "symbol": "✦",
+      "color": "#6574b7"
+    }
+  ],
+  "groups": [
+    {
+      "title": "Worship · earth · sky · provision",
+      "ayahs": [
+        21,
+        22
+      ],
+      "color": "#62b985",
+      "symbol": "☁",
+      "motif": "rain",
+      "quadrant": "ne"
+    },
+    {
+      "title": "The challenge · the warning",
+      "ayahs": [
+        23,
+        24
+      ],
+      "color": "#eed900",
+      "symbol": "♨",
+      "motif": "flame",
+      "quadrant": "nw"
+    },
+    {
+      "title": "Good news · the example",
+      "ayahs": [
+        25,
+        26
+      ],
+      "color": "#f29a00",
+      "symbol": "❀",
+      "motif": "garden",
+      "quadrant": "se"
+    },
+    {
+      "title": "Covenant · return · heavens",
+      "ayahs": [
+        27,
+        28,
+        29
+      ],
+      "color": "#56a6c1",
+      "symbol": "✧",
+      "motif": "link",
+      "quadrant": "sw"
+    }
+  ]
+}

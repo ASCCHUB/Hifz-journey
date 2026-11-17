@@ -1,0 +1,89 @@
+{
+  "id": "al-fatihah",
+  "surah": 1,
+  "from": 1,
+  "to": 7,
+  "title": "Surah Al-Fatihah",
+  "subtitle": "Praise · worship · the straight path",
+  "emblem": "✺",
+  "nodes": [
+    {
+      "ayah": 1,
+      "cue": "Beginning in Allah’s name",
+      "symbol": "☾",
+      "color": "#c99438"
+    },
+    {
+      "ayah": 2,
+      "cue": "Praise · Lord of all worlds",
+      "symbol": "✿",
+      "color": "#2f927b"
+    },
+    {
+      "ayah": 3,
+      "cue": "The Entirely Merciful",
+      "symbol": "☼",
+      "color": "#d27c52"
+    },
+    {
+      "ayah": 4,
+      "cue": "Day of Recompense",
+      "symbol": "⚖",
+      "color": "#8a71b5"
+    },
+    {
+      "ayah": 5,
+      "cue": "Worship · seek help",
+      "symbol": "⌁",
+      "color": "#3887a5"
+    },
+    {
+      "ayah": 6,
+      "cue": "Guide us to the straight path",
+      "symbol": "➜",
+      "color": "#4e9b62"
+    },
+    {
+      "ayah": 7,
+      "cue": "The favored path · those astray",
+      "symbol": "✧",
+      "color": "#bf6a81"
+    }
+  ],
+  "groups": [
+    {
+      "title": "Praise · mercy · recompense",
+      "ayahs": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "color": "#62b985",
+      "symbol": "✦",
+      "motif": "spark",
+      "quadrant": "ne"
+    },
+    {
+      "title": "Worship · help · guidance",
+      "ayahs": [
+        5,
+        6
+      ],
+      "color": "#eed900",
+      "symbol": "⌁",
+      "motif": "compass",
+      "quadrant": "nw"
+    },
+    {
+      "title": "The favored path · those astray",
+      "ayahs": [
+        7
+      ],
+      "color": "#f29a00",
+      "symbol": "➜",
+      "motif": "scale",
+      "quadrant": "sw"
+    }
+  ]
+}
