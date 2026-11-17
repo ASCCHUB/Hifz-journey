@@ -116,6 +116,10 @@ export default function AyahQuickSheet({ s, a, onClose }: { s: number; a: number
             ? <p className="text-xs text-muted" role="status" data-testid="urdu-audio-label">{recording.label.en} — translation audio, not Quran recitation.</p>
             : <p className="text-xs text-muted" role="status" data-testid="urdu-audio-label"><span>{URDU_TTS_LABEL.en}.</span> <span className="ur" dir="rtl" lang="ur">{URDU_TTS_LABEL.ur}</span>{(tts === "speaking" || tts === "paused") && voice?.ok && !voice.canPause ? " Pause is not supported by this voice; use Stop and Replay." : ""}</p>}
           {recNote && <p className="text-xs text-muted" role="status">{recNote}</p>}
+          {set === "tr-ur-maududi" && <div className="grid gap-1 text-xs text-muted">
+            <a className="underline underline-offset-2" href="https://www.quranurdu.com/quran_hazaifi/" target="_blank" rel="noopener noreferrer">Listen to human-narrated Maududi Urdu translation at QuranUrdu.com (external website)</a>
+            <span>This external collection is organized by Surah, not linked to this specific Ayah. Audio on that website is not saved by Hifz Journey for offline use.</span>
+          </div>}
           {tts === "unavailable" && voice && !voice.ok && <p className="text-sm text-muted" role="status">{voice.reason}</p>}
           {tts === "failed" && <p className="text-sm text-weak" role="alert">The Urdu voice could not play this translation. You can read it below.</p>}
           {showTr && (trErr ? <p className="text-sm text-weak">The Urdu translation could not be loaded.</p>
