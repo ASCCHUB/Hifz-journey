@@ -1,0 +1,193 @@
+name: Android CI test APK
+
+# Manual only. Runs the full test workflow first, then runs the project's own
+# scripts/build-android.ps1 unchanged on a GitHub-hosted Windows runner.
+#
+# SIGNING: the APK is signed with this runner's freshly generated Android debug key,
+# NOT the debug key on the developer PC that signed the installed com.hifzcompanion app.
+# Android refuses to install it over that app. It is a CI TEST APK only.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-ci-apk-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  tests:
+    name: Tests
+    uses: ./.github/workflows/hifz-tests.yml
+
+  apk:
+    name: Build and verify CI test APK
+    needs: tests
+    runs-on: windows-latest
+    timeout-minutes: 45
+    env:
+      GRADLE_VERSION: "8.14.3"
+    steps:
+      # The Windows runner converts LF to CRLF on checkout by default. That would change
+      # the bytes of public/data/quran.json and every other frontend file, so turn it off.
+      - name: Keep exact file bytes (no CRLF conversion)
+        run: git config --global core.autocrlf false
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Confirm Quran data bytes are unchanged by checkout
+        shell: pwsh
+        run: |
+          $h = (Get-FileHash public/data/quran.json -Algorithm SHA256).Hash.ToLower()
+          Write-Output "public/data/quran.json SHA-256: $h"
+          if ($h -ne "fab6e90867736262658b840b28b91aaab46ade99b058531e2cdc072931201680") { throw "quran.json bytes differ from the validated baseline." }
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      # Android Gradle Plugin 8.13 needs JDK 17 or newer.
+      - name: Set up Java 17 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install dependencies (npm ci)
+        run: npm ci
+
+      # build-android.ps1 expects the SDK at %LOCALAPPDATA%\Android\Sdk with platform 36.
+      # Point a private LOCALAPPDATA (used only by the build step) at the runner's SDK.
+      - name: Prepare Android SDK (platform 36)
+        shell: pwsh
+        run: |
+          $sdk = $env:ANDROID_HOME
+          if (!$sdk) { $sdk = $env:ANDROID_SDK_ROOT }
+          if (!$sdk -or !(Test-Path $sdk)) { throw "Runner has no Android SDK." }
+          $sdkmanager = Get-ChildItem (Join-Path $sdk "cmdline-tools") -Recurse -Filter sdkmanager.bat | Select-Object -First 1 -ExpandProperty FullName
+          if (!$sdkmanager) { throw "sdkmanager.bat not found under $sdk" }
+          $ErrorActionPreference = "Continue"
+          "y`ny`ny`ny`ny`ny`ny`ny`n" | & $sdkmanager --licenses | Out-Null
+          & $sdkmanager "platforms;android-36" "build-tools;36.0.0" | Out-Null
+          $ErrorActionPreference = "Stop"
+          if (!(Test-Path (Join-Path $sdk "platforms\android-36\android.jar"))) { throw "Android platform 36 install failed." }
+          $local = Join-Path $env:RUNNER_TEMP "localappdata"
+          New-Item -ItemType Directory -Force -Path (Join-Path $local "Android") | Out-Null
+          New-Item -ItemType Junction -Path (Join-Path $local "Android\Sdk") -Target $sdk | Out-Null
+          "HIFZ_LOCALAPPDATA=$local" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "HIFZ_SDK=$sdk" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      # build-android.ps1 looks for gradle-8.14.3 under %USERPROFILE%\.gradle\wrapper\dists.
+      # The project has no Gradle wrapper, so install the official distribution there (SHA-256 checked).
+      - name: Install Gradle ${{ env.GRADLE_VERSION }}
+        shell: pwsh
+        run: |
+          $zip = Join-Path $env:RUNNER_TEMP "gradle-$env:GRADLE_VERSION-bin.zip"
+          $base = "https://services.gradle.org/distributions/gradle-$env:GRADLE_VERSION-bin.zip"
+          Invoke-WebRequest -Uri $base -OutFile $zip
+          $expected = (Invoke-WebRequest -Uri "$base.sha256").Content.ToString().Trim()
+          $actual = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
+          if ($actual -ne $expected) { throw "Gradle download checksum mismatch ($actual vs $expected)." }
+          $dest = Join-Path $env:USERPROFILE ".gradle\wrapper\dists\gradle-$env:GRADLE_VERSION-bin\ci"
+          New-Item -ItemType Directory -Force -Path $dest | Out-Null
+          Expand-Archive -Path $zip -DestinationPath $dest -Force
+          $bat = Join-Path $dest "gradle-$env:GRADLE_VERSION\bin\gradle.bat"
+          & $bat --version
+          "HIFZ_GRADLE=$bat" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      # build-android.ps1 runs Gradle with --offline, so download the Android Gradle Plugin
+      # and its tools into the Gradle cache first with one online build of the native shell.
+      - name: Warm Gradle cache (online, native shell only)
+        shell: pwsh
+        working-directory: android
+        env:
+          ANDROID_HOME: ${{ env.HIFZ_SDK }}
+          ANDROID_SDK_ROOT: ${{ env.HIFZ_SDK }}
+        run: |
+          $ErrorActionPreference = "Continue"
+          & $env:HIFZ_GRADLE --no-daemon --console plain assembleDebug
+          if ($LASTEXITCODE -ne 0) { throw "Gradle warm-up build failed." }
+          Remove-Item -Recurse -Force app\build -ErrorAction SilentlyContinue
+
+      # The project's own build script, unchanged: export, build ID stamping, asset copy,
+      # Gradle assembleDebug, and build-info.mjs verify (exact frontend asset parity).
+      - name: Run scripts/build-android.ps1
+        shell: pwsh
+        env:
+          LOCALAPPDATA: ${{ env.HIFZ_LOCALAPPDATA }}
+        run: |
+          # Gradle and npm write warnings to stderr; judge success by exit codes, not stderr.
+          $ErrorActionPreference = "Continue"
+          $log = Join-Path $env:RUNNER_TEMP "build-android.log"
+          & powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/build-android.ps1 *>&1 | Tee-Object -FilePath $log
+          if ($LASTEXITCODE -ne 0) { throw "build-android.ps1 failed with exit code $LASTEXITCODE." }
+          $text = Get-Content $log -Raw
+          if ($text -notmatch "APK-VERIFIED (\S+) fingerprint (\S+) \S+ (\d+) frontend files, 0 missing, 0 stale, bytes match") { throw "Asset parity verification line not found; not publishing an APK." }
+          if ($text -notmatch "Verified APK: (.+\.apk) \(frontend (\S+), versionCode (\d+)\)") { throw "Verified APK line not found." }
+          "HIFZ_APK=$($Matches[1])" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "HIFZ_BUILD_ID=$($Matches[2])" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "HIFZ_VERSION_CODE=$($Matches[3])" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Label APK and record signing certificate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Continue"
+          $out = Join-Path $env:GITHUB_WORKSPACE "apk-out"
+          New-Item -ItemType Directory -Force -Path $out | Out-Null
+          $name = "HifzJourney-CI-TEST-$env:HIFZ_BUILD_ID-vc$env:HIFZ_VERSION_CODE-NOT-FOR-UPDATE.apk"
+          Copy-Item -LiteralPath $env:HIFZ_APK -Destination (Join-Path $out $name)
+          $apksigner = Get-ChildItem (Join-Path $env:HIFZ_SDK "build-tools") -Recurse -Filter apksigner.bat | Sort-Object FullName -Descending | Select-Object -First 1 -ExpandProperty FullName
+          $certs = (& $apksigner verify --print-certs (Join-Path $out $name) 2>&1) -join "`n"
+          if ($LASTEXITCODE -ne 0) { throw "apksigner could not verify the APK signature." }
+          $aapt = Get-ChildItem (Join-Path $env:HIFZ_SDK "build-tools") -Recurse -Filter aapt.exe | Sort-Object FullName -Descending | Select-Object -First 1 -ExpandProperty FullName
+          $badging = (& $aapt dump badging (Join-Path $out $name) | Select-Object -First 1)
+          if ($badging -notmatch "name='com.hifzcompanion'") { throw "Unexpected package ID: $badging" }
+          $sha = (Get-FileHash (Join-Path $out $name) -Algorithm SHA256).Hash.ToLower()
+          $notice = @"
+          HIFZ JOURNEY - CI TEST APK - NOT SAFE FOR IN-PLACE UPDATE
+
+          This APK was built by GitHub Actions and signed with the GitHub runner's own
+          temporary Android debug key. It is NOT signed with the key used for the
+          Hifz Journey app already installed on your phone.
+
+          Android will refuse to install it over the existing app ("App not installed" /
+          signature conflict). Do NOT uninstall the existing app or clear its data to make
+          it install: that would delete your saved memorization progress.
+
+          Use it only on a separate test device or emulator that does not have
+          com.hifzcompanion installed.
+
+          Package:      $badging
+          Build ID:     $env:HIFZ_BUILD_ID
+          versionCode:  $env:HIFZ_VERSION_CODE
+          Commit:       $env:GITHUB_SHA
+          APK SHA-256:  $sha
+
+          Signing certificate of THIS APK (apksigner):
+          $certs
+          "@
+          $notice | Out-File -FilePath (Join-Path $out "README-CI-TEST-APK.txt") -Encoding utf8
+          Write-Output $notice
+          @"
+          ## CI test APK built - NOT safe to install over the existing app
+          - Build ID: ``$env:HIFZ_BUILD_ID``, versionCode ``$env:HIFZ_VERSION_CODE``
+          - Package: ``com.hifzcompanion`` (checked)
+          - Frontend asset parity: verified by ``scripts/build-info.mjs verify``
+          - Signed with this runner's temporary debug key, which differs from the key of the installed app.
+          ``````
+          $certs
+          ``````
+          "@ | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+          "HIFZ_ARTIFACT=HifzJourney-CI-TEST-$env:HIFZ_BUILD_ID-NOT-FOR-UPDATE" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Upload CI test APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.HIFZ_ARTIFACT }}
+          path: apk-out/
+          if-no-files-found: error
+          retention-days: 14
