@@ -283,10 +283,7 @@ export default function LiveRecitation({ items, title, onClose, auto = false }: 
               result === "missing" || result === "uncertain" ? "text-revise bg-revise/15 rounded" :
               result === "correct" ? "text-strong" : "";
           }}
-          onAyah={(s, a) => {
-            const i = exp.findIndex((w) => w.s === s && w.a === a && w.w === 0);
-            if (i >= 0 && (status === "listening" || status === "paused")) restartAt(i);
-          }}/>
+/>
         <p className="mt-2 text-center text-xs text-muted">Page ${pg} · Matching words appear as you recite. <span className="text-weak">Red = possible mismatch</span>, not a confirmed mistake.</p>
       </div>}
       {!auto && merged.ranges.map(([from, to], ri) => <p key={`${from}-${ri}`} className={`q text-[26px] leading-[2.35] sm:text-[31px] ${ri ? "mt-6 border-t border-line pt-4" : ""}`} dir="rtl">
