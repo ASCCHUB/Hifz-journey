@@ -21,6 +21,7 @@ import java.util.Arrays;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
+import android.view.WindowManager;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
@@ -412,6 +413,15 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public String versionName() {
             try { return getPackageManager().getPackageInfo(getPackageName(), 0).versionName; } catch (Exception e) { return "unknown"; }
+        }
+
+        /** Keep the display awake only while this activity is in the foreground and the user enables it. */
+        @JavascriptInterface
+        public void setKeepScreenOn(boolean enabled) {
+            runOnUiThread(() -> {
+                if (enabled) getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                else getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            });
         }
 
         /** 1 = this build answers /__hifz-audio/fetch (native download for automatic offline audio). */
