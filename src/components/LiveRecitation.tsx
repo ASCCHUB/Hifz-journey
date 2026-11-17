@@ -4,6 +4,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAudio } from "@/components/Audio";
 import MiniMushafPage from "@/components/MiniMushafPage";
+import { installAndroidSpeech } from "@/lib/androidSpeech";
+
+// Direct /recite opens this component without the old passage picker; install the native microphone adapter here.
+installAndroidSpeech();
 import { arNum, juzOf, key, pageOf, ref, sarabic, sname, words } from "@/lib/quran";
 import { align, buildExpected, summarize, type Alignment, type ExpStatus, type HeardResult, type HeardToken, type Verdict } from "@/lib/recitationAlign";
 import { browserSpeechAvailable, checkLocalAsr, createSession, DEFAULT_ASR_URL, getAsrUrl, playPcm, setAsrUrl, type AsrHealth, type AsrSession, type EngineKind, type FinalSegment } from "@/lib/quranAsr";
