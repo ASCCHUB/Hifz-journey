@@ -8,6 +8,12 @@ name: Android CI test APK
 # Android refuses to install it over that app. It is a CI TEST APK only.
 on:
   workflow_dispatch:
+  # Permit a verified build whenever this workflow configuration is updated on main.
+  # Produces CI-TEST-NOT-FOR-UPDATE only; never signs with the developer's key.
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/android-debug.yml
   # Also validates this workflow itself when a pull request changes it
   # (manual dispatch only becomes available once the file is on main).
   pull_request:
