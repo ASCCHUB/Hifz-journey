@@ -41,6 +41,7 @@ function MushafView({ reciteLanding = false }: { reciteLanding?: boolean }) {
   const zoom = st.settings.zoom || 1;
   const [mem, setMem] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [reciteHidden, setReciteHidden] = useState(false);
   const [ptr, setPtr] = useState(0); const [miss, setMiss] = useState<Record<number, 1>>({});
   const [peek, setPeek] = useState(0); const [fin, setFin] = useState(false);
@@ -79,6 +80,17 @@ function MushafView({ reciteLanding = false }: { reciteLanding?: boolean }) {
   // Ayah View / Mushaf View (shared preference). Only rendering changes: lesson and recall state stay as they are.
   const learnView = useLearnView("mushaf");
   // Focus mode during an unsaved Recall: hide the app's bottom navigation (Back to Read stays in the page modes).
+  useEffect(() => {
+    const dismiss = (event: PointerEvent) => {
+      const t = event.target;
+      if (!(t instanceof Element)) return;
+      if (!t.closest(".mushaf-toolbar")) setToolsOpen(false);
+      if (!t.closest(".mushaf-reading-dock")) setReadDockOpen(false);
+      if (!t.closest(".mushaf-recall-dock")) setRecallExtras(false);
+    };
+    document.addEventListener("pointerdown", dismiss);
+    return () => document.removeEventListener("pointerdown", dismiss);
+  }, []);
   const recallFocus = mode === "recall" && saved === null;
   useEffect(() => { document.documentElement.classList.toggle("lesson-focus", recallFocus); return () => document.documentElement.classList.remove("lesson-focus"); }, [recallFocus]);
   const similarOnPage = useMemo(() => c.ayat.filter(([s, a]) => matchesFor(s, a, !!st.settings.mutashabihatPending).length > 0).length, [c, st.settings.mutashabihatPending]);
@@ -318,6 +330,28 @@ function MushafView({ reciteLanding = false }: { reciteLanding?: boolean }) {
   return (
     <div className="flex flex-col gap-3">
     <div className={`mushaf-root flex flex-col gap-3 ${readerFocus ? "mushaf-root-focus" : ""} ${reciteLanding ? "mushaf-root-reciting" : ""}`}>
+      {!reciteLanding && !readerFocus && <nav className="mushaf-location-topbar sticky top-0 z-20 flex flex-wrap items-center gap-2 rounded-xl border border-line bg-surface/95 p-2 backdrop-blur" aria-label="Mushaf quick navigation">
+        <label className="min-w-0 flex-1 text-xs font-semibold">Surah
+          <select className="field mt-1 !py-2 text-sm" aria-label="Jump to Surah" value={c.first[0]} onChange={(e) => {
+            const s = +e.target.value;
+            router.replace(`/mushaf?s=${s}&a=1`, { scroll: true });
+            setToolsOpen(false);
+          }}>{Q().n.map((n, i) => <option key={i} value={i + 1}>{i + 1}. {n[1]}</option>)}</select>
+        </label>
+        <label className="min-w-[5.8rem] flex-1 text-xs font-semibold">Juz
+          <select className="field mt-1 !py-2 text-sm" aria-label="Jump to Juz" value={juzOf(c.first[0], c.first[1])} onChange={(e) => {
+            const [s, a] = Q().juz[+e.target.value - 1][0];
+            router.replace(`/mushaf?s=${s}&a=${a}`, { scroll: true });
+            setToolsOpen(false);
+          }}>{Array.from({length: 30}, (_, i) => <option key={i} value={i + 1}>{i + 1}</option>)}</select>
+        </label>
+        <label className="min-w-[5.5rem] flex-1 text-xs font-semibold">Page
+          <select className="field mt-1 !py-2 text-sm" aria-label="Jump to Mushaf page" value={pg} onChange={(e) => { go(+e.target.value); setToolsOpen(false); }}>
+            {Array.from({ length: 604 }, (_, i) => <option key={i} value={i + 1}>{i + 1}</option>)}
+          </select>
+        </label>
+        <button type="button" className="btn btn-sm self-end" onClick={() => setShowLocationPicker(true)}>Go to Ayah</button>
+      </nav>}
       <div className={`mushaf-header flex items-center gap-2 ${reciteLanding ? "mushaf-recite-header" : ""}`}>
         <div className="flex-1 min-w-0">
           {reciteLanding ? <h1 className="text-xl font-bold">{sname(c.first[0])}</h1> : <h2 className="text-xl font-bold">Page {pg} <span className="text-muted font-medium text-base">of 604</span></h2>}
@@ -388,6 +422,7 @@ function MushafView({ reciteLanding = false }: { reciteLanding?: boolean }) {
 
       {mode === "learn" && lesson.chooser}
 
+      {showLocationPicker && <LocationNavigator initial={c.first as [number, number]} onClose={() => setShowLocationPicker(false)} onOpen={(s, a) => router.replace(`/mushaf?s=${s}&a=${a}`)} />}
       {similarOf && <SimilarSheet s={similarOf[0]} a={similarOf[1]} onClose={() => setSimilarOf(null)} />}
       {similarOnPage > 0 && <p className="text-xs text-muted">{similarOnPage} Ayah{similarOnPage === 1 ? "" : "s"} on this page {similarOnPage === 1 ? "has" : "have"} listed similar Ayahs. In Recall, use the Similar Ayahs button; in Read, tap an Ayah.</p>}
       {recall && <section style={saved === null ? recallDock.style : undefined} className={`card flex flex-col gap-2 ${saved === null ? "mushaf-recall-dock" : ""}`} aria-label="Recall this page" aria-live="polite">
