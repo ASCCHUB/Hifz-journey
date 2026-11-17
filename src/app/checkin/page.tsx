@@ -40,7 +40,7 @@ function CheckIn() {
       <button className="btn" onClick={() => answer("skip")}>Skip today</button>
     </div>}
     <p className="text-xs text-muted">Answering here does not mark any Ayah as memorized or revised. Only recitations you rate in the app count as evidence.</p>
-    <Link className="text-sm underline" href="/journey">Go to My Journey</Link>
+    <Link className="text-sm underline" href="/journey">Go to Dashboard</Link>
   </section>;
 }
 export default function CheckInPage() { return <Suspense fallback={null}><CheckIn /></Suspense>; }
