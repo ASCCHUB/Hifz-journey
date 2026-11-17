@@ -1,6 +1,7 @@
 ﻿"use client";
 // Profile: account and sync, settings, goals, analytics, bookmarks, backup.
 import BuildInfo from "@/components/BuildInfo";
+import DownloadedAudioSettings from "@/components/DownloadedAudioSettings";
 import ReminderSettings from "@/components/ReminderSettings";
 import SettingsGroup from "@/components/SettingsGroup";
 import Link from "next/link";
@@ -112,6 +113,10 @@ export default function ProfilePage() {
       </div>
       </SettingsGroup>
 
+      <SettingsGroup id="downloaded-audio" title="Downloaded Audio" summary="Offline Ayah audio: storage used, limit, clear">
+        <DownloadedAudioSettings />
+      </SettingsGroup>
+
       <SettingsGroup title="Bookmarks" summary={`${bms.length} saved Ayah${bms.length === 1 ? "" : "s"}`}>
       {bms.length ? (
         <section className="card flex flex-col divide-y divide-line !py-1">
@@ -161,7 +166,7 @@ export default function ProfilePage() {
         <p><b className="text-ink">Page layout.</b> Madinah mushaf, 15 lines, from the open mushaf-layout data set.</p>
         <p><b className="text-ink">Translations.</b> Urdu by Abul A&apos;la Maududi and by Fateh Muhammad Jalandhry, English by Saheeh International, all via Tanzil.net.</p>
         <p><b className="text-ink">Tafsir.</b> Al-Tafsir Al-Muyassar (King Fahd Complex). Urdu tafsir is loaded on demand from the open tafsir_api project. Tafsir is shown separately from translation.</p>
-        <p><b className="text-ink">Audio.</b> Streamed from everyayah.com.</p>
+        <p><b className="text-ink">Audio.</b> Arabic recitation from everyayah.com, saved on this device after the first play for offline listening. Urdu translation audio uses the device&apos;s text-to-speech voice (not a human recording) until a licensed recording is added.</p>
       </div>
         <details className="text-sm"><summary className="cursor-pointer text-muted">Diagnostics (for support)</summary><div className="mt-2"><BuildInfo /></div></details>
       </SettingsGroup>

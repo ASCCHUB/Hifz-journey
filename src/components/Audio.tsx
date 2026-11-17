@@ -1,6 +1,11 @@
 "use client";
-// Quran audio: ayah-by-ayah recitation streamed from everyayah.com.
+// Quran audio: ayah-by-ayah recitation from everyayah.com.
+// Each Ayah plays at once; after playback starts, the complete file is saved automatically in app-private
+// storage (lib/audioCache.ts) and later plays use the saved copy first, also offline.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { getAudioCache, type AudioState } from "@/lib/audioCache";
+import { OFFLINE_NOT_SAVED_MESSAGE, playTrack } from "@/lib/audioPlayback";
+import { arabicTrack, everyAyahUrl } from "@/lib/audioSources";
 import { count, nextAyah, prevAyah, Q, ref } from "@/lib/quran";
 import { update, useStore } from "@/lib/store";
 
@@ -13,13 +18,14 @@ export const RECITERS: Record<string, string> = {
   "Saood_ash-Shuraym_128kbps": "Saud Ash-Shuraym",
   MaherAlMuaiqly128kbps: "Maher Al-Muaiqly",
 };
-const pad = (n: number) => String(n).padStart(3, "0");
-export const audioUrl = (reciter: string, s: number, a: number) => `https://everyayah.com/data/${reciter}/${pad(s)}${pad(a)}.mp3`;
+export const audioUrl = (reciter: string, s: number, a: number) => everyAyahUrl(reciter, s, a);
 
 export type Repeat = "off" | "ayah" | "range" | "surah";
 type Range = { s: number; a: number; b: number };
+/** Offline state of the current Ayah: "saved" only after the complete file was stored and read back. */
+export type OfflineState = AudioState | "unsupported";
 type Ctx = {
-  cur: [number, number] | null; playing: boolean; repeat: Repeat; range: Range | null; error: string;
+  cur: [number, number] | null; playing: boolean; repeat: Repeat; range: Range | null; error: string; offline: OfflineState;
   play: (s: number, a: number, range?: Range | null) => void;
   toggle: () => void; stop: () => void; next: () => void; prev: () => void;
   setRepeat: (r: Repeat) => void;
@@ -36,15 +42,28 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   const [repeat, setRepeat] = useState<Repeat>("off");
   const [range, setRange] = useState<Range | null>(null);
   const [error, setError] = useState("");
+  const [offline, setOffline] = useState<OfflineState>("none");
+  const req = useRef(0); // increases on every start; an older, slower start never overrides a newer one
   const live = useRef({ cur, repeat, range, reciter: st.settings.reciter, speed: st.settings.speed });
   live.current = { cur, repeat, range, reciter: st.settings.reciter, speed: st.settings.speed };
 
   const start = useCallback((s: number, a: number) => {
     const audio = el.current; if (!audio) return;
-    setError(""); setCur([s, a]);
-    audio.src = audioUrl(live.current.reciter, s, a);
-    audio.playbackRate = live.current.speed;
-    audio.play().then(() => setPlaying(true)).catch(() => { setPlaying(false); });
+    const my = ++req.current; const isCurrent = () => req.current === my;
+    setError(""); setCur([s, a]); setOffline("none");
+    const track = arabicTrack(live.current.reciter, s, a);
+    playTrack(audio, track, { rate: live.current.speed, isCurrent })
+      .then((r) => {
+        if (!isCurrent()) return;
+        setPlaying(true);
+        setOffline(r.source === "stream" ? "unsupported" : r.source === "offline-cache" ? "saved" : (r.status?.state as AudioState) || "none");
+        void r.saved.then((st) => { if (isCurrent() && st?.state) setOffline(st.state as AudioState); });
+      })
+      .catch((e: Error) => {
+        if (e?.name === "StaleAudioRequest" || !isCurrent()) return;
+        setPlaying(false);
+        if (e?.name === "OfflineUnavailableError") setError(OFFLINE_NOT_SAVED_MESSAGE);
+      });
     if ("mediaSession" in navigator) {
       try { navigator.mediaSession.metadata = new MediaMetadata({ title: ref(s, a), artist: RECITERS[live.current.reciter] || "Quran", album: "Hifz Journey" }); } catch { /* optional */ }
     }
@@ -85,25 +104,44 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => { if (el.current) el.current.playbackRate = st.settings.speed; }, [st.settings.speed]);
 
+  // Live "Saved offline" state for the current Ayah (saving finishes after playback has started).
+  useEffect(() => {
+    let off: (() => void) | undefined; let mounted = true;
+    void getAudioCache().then((c) => {
+      if (!c || !mounted) return;
+      off = c.subscribe((e) => {
+        if (e.type === "cleared") { setOffline((o) => (o === "unsupported" ? o : "none")); return; }
+        const now = live.current.cur;
+        if (e.type !== "status" || !now) return;
+        if (e.id === c.audioId(arabicTrack(live.current.reciter, now[0], now[1]))) setOffline(e.status.state);
+      });
+    });
+    return () => { mounted = false; off?.(); };
+  }, []);
+
   const api = useMemo<Ctx>(() => ({
-    cur, playing, repeat, range, error,
+    cur, playing, repeat, range, error, offline,
     play: (s, a, rg = null) => { setRange(rg); live.current.range = rg; start(s, a); },
     toggle: () => { const a = el.current; if (!a || !cur) return; if (a.paused) a.play().catch(() => {}); else a.pause(); },
-    stop: () => { el.current?.pause(); setCur(null); setRange(null); setError(""); },
+    stop: () => { req.current++; el.current?.pause(); setCur(null); setRange(null); setError(""); },
     next: () => advance(1, false), prev: () => advance(-1, false),
     setRepeat,
-    // Stores a surah's audio in the browser cache so the service worker can play it offline.
+    // Saves a whole surah on request, through the same verified cache as automatic saving
+    // (complete files only; already-saved Ayahs are not downloaded again).
     saveOffline: async (s, onProgress) => {
-      if (!("caches" in window)) throw new Error("Offline storage is not supported in this browser.");
-      const cache = await caches.open("quran-audio-v1"); const total = count(s); let ok = 0;
+      const cache = await getAudioCache();
+      if (!cache) throw new Error("Offline storage is not supported in this browser.");
+      if (!navigator.onLine) throw new Error("You are offline. Connect to the internet and try again.");
+      const total = count(s); let ok = 0;
       for (let a = 1; a <= total; a++) {
-        const u = audioUrl(live.current.reciter, s, a);
-        try { if (!(await cache.match(u))) { const r = await fetch(u, { mode: "no-cors" }); await cache.put(u, r); } ok++; } catch { /* skip this ayah */ }
+        const r = await cache.ensureSaved(arabicTrack(live.current.reciter, s, a), { force: true });
+        if (r.state === "saved") ok++;
         onProgress(a, total);
+        if (r.state === "quota") break; // limit reached: stop instead of failing every remaining Ayah
       }
       return ok;
     },
-  }), [cur, playing, repeat, range, error, start, advance]);
+  }), [cur, playing, repeat, range, error, offline, start, advance]);
 
   return <AudioCtx.Provider value={api}>{children}</AudioCtx.Provider>;
 }
@@ -127,7 +165,7 @@ export function AudioBar() {
           <button className="btn btn-sm" onClick={a.next} aria-label="Next ayah">›</button>
           <button className="flex-1 min-w-0 text-left" onClick={() => setOpen(!open)} aria-expanded={open}>
             <div className="font-semibold truncate">{ref(s, ay)}</div>
-            <div className="text-xs text-muted truncate">{RECITERS[st.settings.reciter] || st.settings.reciter} · {REPEAT_LABEL[a.repeat]}</div>
+            <div className="text-xs text-muted truncate">{RECITERS[st.settings.reciter] || st.settings.reciter} · {REPEAT_LABEL[a.repeat]}{a.offline === "saved" ? <span className="audio-saved-offline" data-testid="audio-saved-offline"> · ✓ Saved offline</span> : null}</div>
           </button>
           <button className="btn btn-sm" onClick={a.stop} aria-label="Close player">✕</button>
         </div>
