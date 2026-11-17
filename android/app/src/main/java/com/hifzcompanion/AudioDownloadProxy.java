@@ -32,10 +32,10 @@ final class AudioDownloadProxy {
     private static final int MAX_REDIRECTS = 3;
 
     /** Hosts of licensed, Ayah-verified Urdu translation recordings (see src/lib/audioSources.ts). Empty on purpose. */
-    private static final String[] URDU_AUDIO_HOSTS = {};
+    private static final String[] URDU_AUDIO_HOSTS = {"cdn.islamic.network"};
 
     private static final Pattern EVERYAYAH_PATH = Pattern.compile("^/data/[A-Za-z0-9_.-]+/\\d{6}\\.mp3$");
-    private static final Pattern URDU_PATH = Pattern.compile("^(/[A-Za-z0-9_.-]+)+/\\d{6}\\.(mp3|m4a|ogg)$");
+    private static final Pattern URDU_PATH = Pattern.compile("^/quran/audio/(32|40|48|64|128|192)/ur\\.khan/[1-9][0-9]{0,3}\\.mp3$");
 
     interface Opener { HttpURLConnection open(URL url) throws IOException; }
 
