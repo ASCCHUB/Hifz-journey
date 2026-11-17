@@ -19,6 +19,7 @@ export default function AyahSheet({ s, a, onClose, onPractise }: { s: number; a:
   const [tafText, setTafText] = useState(""); const [tafState, setTafState] = useState<"idle" | "loading" | "error">("idle");
   const set = st.settings.tr;
   const [similar, setSimilar] = useState(false);
+  const [showActions, setShowActions] = useState(false);
 
   useEffect(() => {
     let live = true; setTr(""); setTrErr(false);
@@ -50,16 +51,17 @@ export default function AyahSheet({ s, a, onClose, onPractise }: { s: number; a:
         : <p className="text-sm text-muted">Loading…</p>}
 
       <label className="label" htmlFor="tafsel">Tafsir</label>
-      <select id="tafsel" className="field" value={taf} onChange={(e) => setTaf(e.target.value as TafsirChoice)}>
+      <select id="tafsel" className="field" value={taf} onChange={(e) => { setTaf(e.target.value as TafsirChoice); setShowActions(false); }}>
         <option value="">Choose a tafsir…</option>
         <option value="tafsir-ar-muyassar">{SETS["tafsir-ar-muyassar"].label}</option>
         {(Object.keys(REMOTE_TAFSIR) as RemoteTafsir[]).map((n) => <option key={n} value={n}>{REMOTE_TAFSIR[n]}</option>)}
       </select>
       {taf && (tafState === "loading" ? <p className="text-sm text-muted">Loading the tafsir…</p>
         : tafState === "error" ? <p className="text-sm text-weak">This tafsir could not be loaded. It needs an internet connection.</p>
-        : <div className={`card max-h-72 overflow-auto ${taf === "tafsir-ar-muyassar" ? "ar text-[17px]" : "ur text-[16px]"}`} dir="rtl">{tafText}</div>)}
+        : <div className={`card !overflow-visible whitespace-pre-wrap break-words leading-loose ${taf === "tafsir-ar-muyassar" ? "ar text-[19px]" : "ur text-[19px]"}`} dir="rtl" lang={taf === "tafsir-ar-muyassar" ? "ar" : "ur"} aria-label="Full tafsir text">{tafText}</div>)}
 
-      <div className="grid grid-cols-2 gap-2">
+      <button type="button" className="btn w-full" aria-expanded={showActions} aria-controls="ayah-sheet-actions" onClick={() => setShowActions((v) => !v)}>{showActions ? "Hide extra actions" : "Show bookmark, playback and learning actions"}</button>
+      {showActions && <div id="ayah-sheet-actions" className="grid grid-cols-2 gap-2">
         <button className={`btn ${bm ? "btn-on" : ""}`} onClick={() => update((d) => { if (d.bookmarks[k]) delete d.bookmarks[k]; else d.bookmarks[k] = { t: Date.now(), f: 0 }; })}>{bm ? "Bookmarked" : "Bookmark"}</button>
         <button className={`btn ${bm?.f ? "btn-on" : ""}`} onClick={() => update((d) => { const b = d.bookmarks[k] || (d.bookmarks[k] = { t: Date.now(), f: 0 }); b.f = b.f ? 0 : 1; })}>{bm?.f ? "Favourite" : "Add to favourites"}</button>
         <button className="btn" onClick={() => audio.play(s, a)}>Play this ayah</button>
@@ -71,7 +73,7 @@ export default function AyahSheet({ s, a, onClose, onPractise }: { s: number; a:
         <Link className="btn" href={`/memorize?s=${s}&a=${a}&endS=${s}&endA=${a}&mode=revise`}>Revise this ayah</Link>
         {onPractise && <button className="btn-primary col-span-2" onClick={onPractise}>Practise this ayah from memory</button>}
         <SimilarButton s={s} a={a} className="col-span-2" onOpen={() => setSimilar(true)} />
-      </div>
+      </div>}
     </Sheet></>
   );
 }

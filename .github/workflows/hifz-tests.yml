@@ -68,6 +68,8 @@ jobs:
         run: npm run test:local-time
       - name: "Test: four Android fixes"
         run: npm run test:four-android-fixes
+      - name: "Test: Tafsir sheet and actions"
+        run: node --test scripts/test-ayah-tafsir-sheet.mjs
       - name: "Test: learning features"
         run: npm run test:learning-features
       - name: "Test: automatic offline audio cache"
