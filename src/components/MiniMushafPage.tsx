@@ -12,10 +12,11 @@ type Props = {
   state: (w: PageWord) => MiniWordState;
   active?: string | null;            // "s:a" to highlight
   marks?: Record<string, string>;    // "s:a" → extra class for the Ayah number (e.g. a rating colour)
+  wordClass?: (w: PageWord) => string; // recitation feedback colour, never changes the Quran source text
   onAyah?: (s: number, a: number) => void;
 };
 
-export default function MiniMushafPage({ page, state, active, marks, onAyah }: Props) {
+export default function MiniMushafPage({ page, state, active, marks, wordClass, onAyah }: Props) {
   const c = useMemo(() => pageContent(page), [page]);
   const box = useRef<HTMLDivElement>(null);
   const [font, setFont] = useState<number | null>(null);
@@ -48,7 +49,7 @@ export default function MiniMushafPage({ page, state, active, marks, onAyah }: P
         {l.idx.map((i) => {
           const f = c.flat[i], k = key(f.s, f.a), s = state(f);
           return <span key={i} onClick={onAyah ? () => onAyah(f.s, f.a) : undefined}>
-            <Word txt={f.txt} state={s} active={active === k} />
+            <Word txt={f.txt} state={s} active={active === k} className={wordClass?.(f) ?? ""} />
             {f.last && <span className={`mnum ${marks?.[k] || ""}`}>{arNum(f.a)}</span>}
           </span>;
         })}
