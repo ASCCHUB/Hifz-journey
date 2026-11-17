@@ -70,6 +70,8 @@ jobs:
         run: npm run test:four-android-fixes
       - name: "Test: Tafsir sheet and actions"
         run: node --test scripts/test-ayah-tafsir-sheet.mjs
+      - name: "Test: screen awake and study controls"
+        run: node --test scripts/test-screen-awake-dock.mjs
       - name: "Test: learning features"
         run: npm run test:learning-features
       - name: "Test: automatic offline audio cache"
