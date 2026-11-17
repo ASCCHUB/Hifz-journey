@@ -30,7 +30,7 @@ export const Icon = ({ name, className = "w-6 h-6" }: { name: string; className?
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true"><path d={ICONS[name]} /></svg>
 );
 const NAV = [
-  { href: "/journey", label: "My Journey", icon: "memorize" },
+  { href: "/journey", label: "Dashboard", icon: "memorize" },
   { href: "/learn", label: "New Learning", icon: "mushaf" },
   { href: "/revision", label: "Revision", icon: "recite" },
   { href: "/quran", label: "My Quran", icon: "home" },
@@ -133,7 +133,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
     if (path.startsWith("/mushaf") && href === "/mushaf") return !mushafLearn;
     return href === "/" ? path === "/" : path.startsWith(href);
   };
-  const topTitle = path === "/journey" ? "My Journey" : path === "/learn" ? "New Learning"
+  const topTitle = path === "/journey" ? "Dashboard" : path === "/learn" ? "New Learning"
     : path === "/mushaf" ? (mushafLearn ? "Mushaf Learn" : mushafRecall ? "Mushaf Recall" : "Read Mushaf")
     : path === "/revision" ? "Your Revision" : path === "/quran" ? "My Quran"
     : path === "/progress" ? "Progress" : path === "/journey-settings" ? "Journey Settings" : path === "/profile" ? "Settings"
@@ -167,7 +167,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
           {NAV.map((n) => (
             <Link key={n.href} href={n.href} aria-current={active(n.href) ? "page" : undefined}
               className={`flex flex-col items-center justify-center gap-1 text-xs font-semibold ${active(n.href) ? "text-accent" : "text-muted"}`}>
-              <Icon name={n.icon} className="w-[22px] h-[22px]" /><span className="text-[10px] sm:text-xs">{n.label === "My Journey" ? "Journey" : n.label === "New Learning" ? "Learn" : n.label}</span>
+              <Icon name={n.icon} className="w-[22px] h-[22px]" /><span className="text-[10px] sm:text-xs">{n.label === "Dashboard" ? "Dashboard" : n.label === "New Learning" ? "Learn" : n.label}</span>
             </Link>
           ))}
           <button type="button" aria-expanded={showMore} onClick={() => setShowMore((v) => !v)} className={`flex flex-col items-center justify-center gap-1 text-xs font-semibold ${showMore || MORE.some(([href]) => active(href)) ? "text-accent" : "text-muted"}`}><span className="text-xl leading-[22px]" aria-hidden>•••</span><span className="text-[10px] sm:text-xs">More</span></button>
