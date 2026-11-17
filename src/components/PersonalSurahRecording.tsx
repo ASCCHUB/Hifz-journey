@@ -36,8 +36,8 @@ export default function PersonalSurahRecording({ surah, ayah, playerRef, onPlay 
     finally { setBusy(false); }
   };
   return <div className="grid gap-2 border-t border-line pt-3" aria-label="Private whole-Surah recording">
-    <p className="text-sm font-medium">My Maududi translation recording — whole Surah {surah}</p>
-    <p className="text-xs text-muted">Import an MP3, M4A or OGG recording you obtained lawfully. Stored on this device for offline listening. The file covers the whole Surah, not specifically Ayah {ayah}.</p>
+    <p className="text-sm font-medium">My imported Urdu recording — whole Surah {surah}</p>
+    <p className="text-xs text-muted">Import an MP3, M4A or OGG recording you obtained lawfully. Stored on this device for offline listening. The app cannot verify the narrator or translation. The file covers the whole Surah, not specifically Ayah {ayah}.</p>
     <label className="btn text-center">
       {busy ? "Saving recording…" : name ? "Replace saved Surah recording" : "Import my Surah recording"}
       <input type="file" className="sr-only" accept=".mp3,.m4a,.ogg,audio/mpeg,audio/mp4,audio/ogg"
