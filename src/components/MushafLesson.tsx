@@ -4,6 +4,7 @@
 // (same lesson ids as /learn), finishLesson() for the one-time evidence save. The Mushaf page draws the words;
 // this hook supplies (a) how each word looks for the current step and (b) the compact teaching panel.
 import { scrollMotion } from "@/lib/readerMode";
+import { useMovableDock } from "@/lib/useMovableDock";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import MapCue from "@/components/MapCue";
@@ -39,6 +40,7 @@ export function useMushafLesson(o: {
   setPortion: (p: { from: string; to: string } | null) => void; returnUrl: string;
 }): MushafLessonApi {
   const st = useStore(); const player = useRepeatPlayer();
+  const floatingDock = useMovableDock();
   const { page, pageAyahs, halves } = o;
   const kk = (x: Ayah) => `${x[0]}:${x[1]}`;
   // Selected portion: explicit from/to, or ?portion=page|first|second (from Home/Journey links).
@@ -227,8 +229,8 @@ export function useMushafLesson(o: {
     if (lesson.mode === "manual") {
       const rated = portion.filter(([s, a]) => lesson.results[finalKey(s, a)]).length;
       const sel = manualSel; const f = sel ? manualFade[kk(sel)] | 0 : 0; const r = sel ? lesson.results[finalKey(sel[0], sel[1])] : undefined;
-      panel = <section ref={(el) => { panelRef.current = el; }} data-compact={compact} className={`mushaf-lesson-panel card sticky bottom-[72px] z-10 flex max-h-[45vh] flex-col overflow-y-auto overscroll-contain lg:bottom-4 ${compact ? "gap-1.5 !p-2.5" : "gap-2"}`} aria-label="Manual learning" aria-live="polite">
-        <div className="lesson-dock-header flex items-center justify-between gap-2"><div className="min-w-0"><div className="text-xs font-bold uppercase tracking-wide text-accent">Manual learning</div><div className="truncate text-sm font-semibold">{meta.title} · {rated} of {portion.length} rated</div></div><div className="flex shrink-0 gap-1"><button className="btn btn-sm" aria-expanded={!compact} aria-label={compact ? "Expand lesson controls" : "Collapse lesson controls"} onClick={() => setCompact(!compact)}>{compact ? "Expand" : "Collapse"}</button>{exit}</div></div>
+      panel = <section ref={(el) => { panelRef.current = el; }} data-compact={compact} style={floatingDock.style} className={`mushaf-lesson-panel card sticky bottom-[72px] z-10 flex max-h-[45vh] flex-col overflow-y-auto overscroll-contain lg:bottom-4 ${compact ? "gap-1.5 !p-2.5" : "gap-2"}`} aria-label="Manual learning" aria-live="polite">
+        <div className="lesson-dock-header flex items-center justify-between gap-2"><div className="min-w-0"><div className="text-xs font-bold uppercase tracking-wide text-accent">Manual learning</div><div className="truncate text-sm font-semibold">{meta.title} · {rated} of {portion.length} rated</div></div><div className="flex shrink-0 flex-wrap gap-1"><button type="button" className="btn btn-sm" {...floatingDock.handle}>Move</button>{floatingDock.moved && <button type="button" className="btn btn-sm" onClick={floatingDock.reset}>Reset</button>}<button className="btn btn-sm" aria-expanded={!compact} aria-label={compact ? "Expand lesson controls" : "Collapse lesson controls"} onClick={() => setCompact(!compact)}>{compact ? "Expand" : "Collapse"}</button>{exit}</div></div>
         <button type="button" className={`btn btn-sm self-start ${visibility === "full" ? "" : "btn-on"}`} aria-pressed={visibility !== "full"} onClick={() => setVisibility(visibility === "full" ? "unlearned" : "full")}>{visibility === "full" ? "Hide rest of page" : "Show full page"}</button><details className="text-xs"><summary className="cursor-pointer font-semibold text-muted">Display options</summary><label className="mt-2 flex flex-wrap items-center gap-2 text-sm">Text visibility<select className="field !w-auto !min-w-0 !py-1 text-sm" aria-label="Text visibility" value={visibility} onChange={(e) => setVisibility(e.target.value as TextVisibility)}><option value="full">Show full page</option><option value="unlearned">Hide unlearned Ayahs</option><option value="current">Current Ayah only</option></select></label></details>
         <div className="lesson-dock-active text-sm"><b>{sel ? `${sname(sel[0])} ${sel[1]}` : "Choose an Ayah"}</b></div>
         {!sel ? <p className="lesson-dock-instruction text-sm text-muted">Tap an Ayah on the page to work on it.</p> : <>
@@ -259,11 +261,11 @@ export function useMushafLesson(o: {
       const prep = step.kind === "listen" || step.kind === "read" || step.kind === "fade";
       const matchedJuz = activeAyah ? referenceJuzForAyah(activeAyah[0], activeAyah[1], availableRefJuz) : null;
       const visualMapHref = matchedJuz ? referenceMapHref(matchedJuz, o.returnUrl) : "";
-      panel = <section ref={(el) => { panelRef.current = el; }} data-compact={compact} className={`mushaf-lesson-panel card sticky bottom-[72px] z-10 flex max-h-[45vh] flex-col overflow-y-auto overscroll-contain lg:bottom-4 ${compact ? "gap-1.5 !p-2.5" : "gap-2"}`} aria-label="Lesson" aria-live="polite">
+      panel = <section ref={(el) => { panelRef.current = el; }} data-compact={compact} style={floatingDock.style} className={`mushaf-lesson-panel card sticky bottom-[72px] z-10 flex max-h-[45vh] flex-col overflow-y-auto overscroll-contain lg:bottom-4 ${compact ? "gap-1.5 !p-2.5" : "gap-2"}`} aria-label="Lesson" aria-live="polite">
         <div className="lesson-dock-header flex items-center justify-between gap-2">
           <div className="min-w-0"><div className="text-xs font-bold uppercase tracking-wide text-accent">{act}{isFinal && cur ? ` · ${cursor + 1} of ${portion.length}` : ` · Ayah ${step.ayahIndex} of ${step.ayahCount}`}</div>
             <div className="truncate text-xs text-muted">{meta.title} · step {stepIdx + 1} of {steps.length}</div></div>
-          <div className="flex shrink-0 gap-1"><button className="btn btn-sm" aria-expanded={!compact} aria-label={compact ? "Expand lesson controls" : "Collapse lesson controls"} onClick={() => setCompact(!compact)}>{compact ? "Expand" : "Collapse"}</button>{exit}</div>
+          <div className="flex shrink-0 flex-wrap gap-1"><button type="button" className="btn btn-sm" {...floatingDock.handle}>Move</button>{floatingDock.moved && <button type="button" className="btn btn-sm" onClick={floatingDock.reset}>Reset</button>}<button className="btn btn-sm" aria-expanded={!compact} aria-label={compact ? "Expand lesson controls" : "Collapse lesson controls"} onClick={() => setCompact(!compact)}>{compact ? "Expand" : "Collapse"}</button>{exit}</div>
         </div>
         <div className="lesson-dock-active flex items-center justify-between gap-2 text-sm"><b>{activeAyah ? `${sname(activeAyah[0])} ${activeAyah[1]}` : isFinal && cur ? `${sname(cur[0])} ${cur[1]}` : `Ayah ${step.ayahIndex}`}</b><span className="text-xs text-muted">{stepIdx + 1} / {steps.length}</span></div>
         <div className="lesson-dock-progress h-1.5 overflow-hidden rounded-full bg-line" role="progressbar" aria-label="Lesson progress" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}><div className="h-full bg-accent" style={{ width: `${pct}%` }} /></div>
