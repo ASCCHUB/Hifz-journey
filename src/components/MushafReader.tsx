@@ -11,6 +11,7 @@ import SearchDialog from "@/components/SearchDialog";
 import LocationNavigator from "@/components/LocationNavigator";
 import { arNum, isValidAyah, juzOf, key, pageContent, pageOf, Q, ref, sarabic, sname, text } from "@/lib/quran";
 import { readerBackAction, scrollMotion } from "@/lib/readerMode";
+import { useMovableDock } from "@/lib/useMovableDock";
 import { addHist, logAdd, markRead, today, update, useStore } from "@/lib/store";
 import Link from "next/link";
 import { SaveLine } from "@/components/SaveStatus";
@@ -30,6 +31,9 @@ const MARK_LABEL: Record<Mark, string> = { ok: "Recited correctly", hes: "Needed
 
 function MushafView({ reciteLanding = false }: { reciteLanding?: boolean }) {
   const router = useRouter(); const params = useSearchParams(); const st = useStore(); const audio = useAudio();
+  const recallDock = useMovableDock(); const readDock = useMovableDock();
+  const [readDockOpen, setReadDockOpen] = useState(false);
+  const [recallExtras, setRecallExtras] = useState(false);
   const queryS = Number(params.get("s")), queryA = Number(params.get("a"));
   const deepLink = params.has("s") && params.has("a") && isValidAyah(Q(), queryS, queryA);
   const pg = deepLink ? pageOf(queryS, queryA) : Math.min(604, Math.max(1, parseInt(params.get("p") || "", 10) || st.lastPage || 1));
@@ -349,6 +353,21 @@ function MushafView({ reciteLanding = false }: { reciteLanding?: boolean }) {
         {(["read", "learn", "recall"] as Mode[]).map((m) => <button key={m} role="tab" aria-selected={mode === m} className={`btn btn-sm ${mode === m ? "btn-on" : "border-transparent"}`} onClick={() => mode !== m && setMode(m)}>{m === "read" ? "Read" : m === "learn" ? "Learn" : "Recall"}</button>)}
       </div>}
 
+      {mode === "read" && !readerFocus && !reciteLanding && <section
+        className="mushaf-reading-dock" style={readDock.style} aria-label="Movable reading controls">
+        <div className="flex flex-wrap items-center gap-1">
+          <button type="button" className="btn btn-sm" {...readDock.handle}>Move</button>
+          {readDock.moved && <button type="button" className="btn btn-sm" onClick={readDock.reset}>Reset</button>}
+          <button type="button" className="btn btn-sm" aria-expanded={readDockOpen} onClick={() => setReadDockOpen((v) => !v)}>{readDockOpen ? "Hide reading controls" : "Reading controls"}</button>
+        </div>
+        {readDockOpen && <div className="mt-2 flex flex-wrap gap-2">
+          <span className="self-center text-sm font-semibold">Page {pg}</span>
+          <button type="button" className="btn btn-sm" disabled={pg <= 1} onClick={() => go(pg - 1)}>Previous page</button>
+          <button type="button" className="btn btn-sm" disabled={pg >= 604} onClick={() => go(pg + 1)}>Next page</button>
+          <button type="button" className="btn btn-sm" disabled={zoom <= 1} onClick={() => update((d) => { d.settings.zoom = Math.max(1, zoom - 0.5); })}>Smaller text</button>
+          <button type="button" className="btn btn-sm" disabled={zoom >= 4} onClick={() => update((d) => { d.settings.zoom = Math.min(4, zoom + 0.5); })}>Larger text</button>
+        </div>}
+      </section>}
       {/* Live recitation: kept in Read, Recall and the Recite screen; not shown while choosing a lesson in Learn,
           so the page sits right under the lesson chooser (Recite stays one tab away). */}
       {(mode !== "learn" || reciteLanding) && <RecitePanel
@@ -371,23 +390,23 @@ function MushafView({ reciteLanding = false }: { reciteLanding?: boolean }) {
 
       {similarOf && <SimilarSheet s={similarOf[0]} a={similarOf[1]} onClose={() => setSimilarOf(null)} />}
       {similarOnPage > 0 && <p className="text-xs text-muted">{similarOnPage} Ayah{similarOnPage === 1 ? "" : "s"} on this page {similarOnPage === 1 ? "has" : "have"} listed similar Ayahs. In Recall, use the Similar Ayahs button; in Read, tap an Ayah.</p>}
-      {recall && <section className={`card flex flex-col gap-2 ${saved === null ? "mushaf-recall-dock" : ""}`} aria-label="Recall this page" aria-live="polite">
+      {recall && <section style={saved === null ? recallDock.style : undefined} className={`card flex flex-col gap-2 ${saved === null ? "mushaf-recall-dock" : ""}`} aria-label="Recall this page" aria-live="polite">
         {saved === null ? <>
-          <div className="flex items-center justify-between gap-2"><b>Recite page {pg} from memory</b><span className="text-sm text-muted">{rated} of {ayahs.length} rated</span></div>
+          <div className="flex flex-wrap items-center justify-between gap-2"><b>Recite page {pg} from memory</b><span className="text-sm text-muted">{rated} of {ayahs.length} rated</span><div className="flex flex-wrap gap-1"><button type="button" className="btn btn-sm" {...recallDock.handle}>Move</button>{recallDock.moved && <button type="button" className="btn btn-sm" onClick={recallDock.reset}>Reset</button>}<button type="button" className="btn btn-sm" aria-expanded={recallExtras} onClick={() => setRecallExtras((v) => !v)}>{recallExtras ? "Less" : "More"}</button></div></div>
           {cur && <>
             <p className="text-sm">Now: <b>{sname(cur[0])} {cur[1]}</b>. Recite it, then rate yourself honestly.</p>
             <div className="flex flex-wrap gap-2">
               <button className="btn btn-sm" onClick={hint}>Hint (next word)</button>
               <button className="btn btn-sm" onClick={peekAyah} disabled={!!checked[curK]}>Reveal Ayah</button>
               {/* Opening Similar Ayahs shows the Ayah's text, so it counts as help, like a hint. */}
-              <SimilarButton s={cur[0]} a={cur[1]} onOpen={() => { setHelp((h) => ({ ...h, [curK]: true })); setSimilarOf(cur); }} />
+              {recallExtras && <SimilarButton s={cur[0]} a={cur[1]} onOpen={() => { setHelp((h) => ({ ...h, [curK]: true })); setSimilarOf(cur); }} />}
             </div>
             <div className="grid grid-cols-3 gap-2">
               <button className="btn-primary" onClick={() => rate("ok")}>{MARK_LABEL.ok}</button>
               <button className="btn" onClick={() => rate("hes")}>{MARK_LABEL.hes}</button>
               <button className="btn" onClick={() => rate("bad")}>{MARK_LABEL.bad}</button>
             </div>
-            <p className="text-xs text-muted">{help[curK] ? "Help used: this Ayah counts as “Needed help”. " : ""}Saved only when every Ayah is rated.</p>
+            {recallExtras && <p className="text-xs text-muted">{help[curK] ? "Help used: this Ayah counts as “Needed help”. " : ""}Saved only when every Ayah is rated.</p>}
           </>}
         </> : <>
           <b>{saved} ayah{saved === 1 ? "" : "s"} saved from page {pg}</b>
