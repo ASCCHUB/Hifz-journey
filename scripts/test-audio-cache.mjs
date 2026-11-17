@@ -128,7 +128,7 @@ test("Players use the shared cache: main player, lesson repeat player, Urdu reco
   assert.match(lesson, /playTrack\(a, arabicTrack/);
   assert.doesNotMatch(lesson, /a\.src = audioUrl/);
   const sheet = await src("src/components/AyahQuickSheet.tsx");
-  assert.match(sheet, /resolveUrduAudio/); assert.match(sheet, /playUrduRecording\(recording\.track/);
+  assert.match(sheet, /resolveUrduAudio/); assert.match(sheet, /shamshadTrack\(s, a\)/); assert.match(sheet, /playUrduRecording\(track, onRec\)/);
   assert.match(await src("src/lib/urduRecording.ts"), /playTrack\(el, track/, "recorded Urdu uses the shared cache");
   assert.match(sheet, /speakUrdu\(/, "existing Urdu TTS is kept");
   assert.match(sheet, /URDU_TTS_LABEL/);
@@ -152,7 +152,7 @@ test("Service worker: audio cache-first with Range support; every existing offli
   assert.match(sw, /url\.pathname\.startsWith\("\/data\/"\) \|\| url\.pathname\.startsWith\("\/fonts\/"\) \|\| url\.pathname\.startsWith\("\/icons\/"\) \|\| url\.pathname\.startsWith\("\/pdfjs\/"\)/);
   assert.match(sw, /status: 206/); assert.match(sw, /status: 416/);
   assert.match(sw, /res\.type !== "opaque"/, "never stores opaque responses");
-  assert.match(sw, /const EXTRA_AUDIO_ORIGINS = \[\];/);
+  assert.match(sw, /const EXTRA_AUDIO_ORIGINS = \["https:\/\/cdn\.islamic\.network"\];/);
 });
 
 test("Service worker Range parsing", async () => {
@@ -173,11 +173,49 @@ test("Android: narrow native download path wired into the existing WebView, no C
   assert.match(main, /public int audioProxyVersion\(\) \{ return 1; \}/);
   assert.match(main, /"GET"\.equalsIgnoreCase\(request\.getMethod\(\)\)/);
   const proxy = await src("android/app/src/main/java/com/hifzcompanion/AudioDownloadProxy.java");
-  assert.match(proxy, /URDU_AUDIO_HOSTS = \{\};/);
+  assert.match(proxy, /URDU_AUDIO_HOSTS = \{"cdn\.islamic\.network"\};/);
   assert.doesNotMatch(proxy, /import android\./);
   assert.doesNotMatch(proxy, /FileOutputStream|getExternal|Environment\./, "never writes files");
   const pkg = JSON.parse(await src("package.json"));
   assert.ok(!Object.keys({ ...pkg.dependencies, ...pkg.devDependencies }).some((d) => /capacitor/i.test(d)));
   const gradle = await src("android/app/build.gradle");
   assert.doesNotMatch(gradle, /signingConfig/);
+});
+
+
+test("Shamshad source: authenticated edition and Ayah mapping yield the provider CDN audio URL only", async () => {
+  const sh = await import("../src/lib/shamshadUrdu.ts");
+  const item = { code: 200, data: { number: 1, numberInSurah: 1, surah: { number: 1 },
+    edition: { identifier: "ur.khan" }, audio: "https://cdn.islamic.network/quran/audio/64/ur.khan/1.mp3" }};
+  assert.equal(sh.parseShamshadAyah(item, 1, 1), item.data.audio);
+  assert.throws(() => sh.parseShamshadAyah({ ...item, data: { ...item.data, numberInSurah: 2 } }, 1, 1), /mapping/);
+  assert.throws(() => sh.parseShamshadAyah({ ...item, data: { ...item.data, edition: { identifier: "ur.maududi" } } }, 1, 1), /mapping/);
+  assert.throws(() => sh.parseShamshadAyah({ ...item, data: { ...item.data, audio: "https://evil.example/quran/audio/64/ur.khan/1.mp3" } }, 1, 1), /approved edition/);
+  assert.throws(() => sh.parseShamshadAyah({ ...item, data: { ...item.data, audio: "https://cdn.islamic.network/quran/audio/64/ur.khan/2.mp3" } }, 1, 1), /approved edition/);
+  assert.throws(() => sh.validateShamshadAudioUrl("http://cdn.islamic.network/quran/audio/64/ur.khan/1.mp3", 1), /approved edition/);
+});
+
+test("Shamshad source: resolves the URL once, reuses saved metadata offline, audio cache is shared", async () => {
+  const sh = await import("../src/lib/shamshadUrdu.ts");
+  const oldFetch = globalThis.fetch, oldStorage = globalThis.localStorage;
+  const map = new Map();
+  let calls = 0;
+  globalThis.localStorage = { getItem: k => map.get(k) ?? null, setItem: (k,v) => map.set(k,v) };
+  globalThis.fetch = async (url) => {
+    calls++;
+    assert.equal(url, "https://api.alquran.cloud/v1/ayah/1:1/ur.khan");
+    return { ok: true, json: async () => ({ code: 200, data: { number: 1,
+      numberInSurah: 1, surah: { number: 1 }, edition: { identifier: "ur.khan" },
+      audio: "https://cdn.islamic.network/quran/audio/64/ur.khan/1.mp3" } }) };
+  };
+  try {
+    const online = await sh.shamshadTrack(1,1);
+    assert.equal(online.kind, "ur-translation");
+    assert.equal(online.url, "https://cdn.islamic.network/quran/audio/64/ur.khan/1.mp3");
+    assert.match(ac.audioId(online), /^ur-translation:shamshad/);
+    globalThis.fetch = async () => { throw new Error("offline"); };
+    const offline = await sh.shamshadTrack(1,1);
+    assert.deepEqual(offline, online);
+    assert.equal(calls, 1);
+  } finally { globalThis.fetch = oldFetch; globalThis.localStorage = oldStorage; }
 });
