@@ -74,6 +74,8 @@ jobs:
         run: node --test scripts/test-screen-awake-dock.mjs
       - name: "Test: Dashboard, manual revision, Mushaf and recite"
         run: node --test scripts/test-dashboard-revision-recite.mjs
+      - name: "Test: pinned study docks, outside tap and icons"
+        run: node --test scripts/test-pinned-docks-and-icons.mjs
       - name: "Test: learning features"
         run: npm run test:learning-features
       - name: "Test: automatic offline audio cache"
