@@ -85,7 +85,7 @@ function MushafView({ reciteLanding = false }: { reciteLanding?: boolean }) {
     const dismiss = (event: PointerEvent) => {
       const t = event.target;
       if (!(t instanceof Element)) return;
-      if (!t.closest(".mushaf-toolbar")) setToolsOpen(false);
+      if (!t.closest(".mushaf-tools-button, .mushaf-tools-menu")) setToolsOpen(false);
       if (!t.closest(".mushaf-reading-dock")) setReadDockOpen(false);
       if (!t.closest(".mushaf-recall-dock")) setRecallExtras(false);
     };
@@ -469,7 +469,7 @@ function MushafView({ reciteLanding = false }: { reciteLanding?: boolean }) {
           <button className="btn btn-sm" disabled={pg >= 604} onClick={() => { if (mem) go(pg + 1, true); else { update((d) => markRead(d, pg)); go(pg + 1); } }} aria-label="Next Mushaf page">Next</button>
           <button className={`btn btn-sm mushaf-tools-button ${toolsOpen ? "btn-on" : ""}`} aria-expanded={toolsOpen} onClick={() => setToolsOpen((v) => !v)}><ControlIcon name="settings" /> Tools <ControlIcon name={toolsOpen ? "chevron-up" : "chevron-down"} /></button>
         </div>
-        {toolsOpen && <div className="flex flex-wrap gap-2 mt-2">
+        {toolsOpen && <div className="mushaf-tools-menu flex flex-wrap gap-2 mt-2">
         {mem && <button className="btn btn-sm btn-on" aria-pressed onClick={() => { setMem(false); setPtr(0); setMiss({}); setPeek(0); setFin(false); }}>Exit old memorize mode</button>}
         <Link className="btn btn-sm" href={`/quran?tab=page&page=${pg}`}>Page status</Link>
         <button className="btn btn-sm" onClick={() => setSearching(true)}>Search</button>
