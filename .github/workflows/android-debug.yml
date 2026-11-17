@@ -1,6 +1,6 @@
 name: Android CI test APK
 
-# Manual only. Runs the full test workflow first, then runs the project's own
+# Manual. Runs the full test workflow first, then runs the project's own
 # scripts/build-android.ps1 unchanged on a GitHub-hosted Windows runner.
 #
 # SIGNING: the APK is signed with this runner's freshly generated Android debug key,
@@ -8,6 +8,12 @@ name: Android CI test APK
 # Android refuses to install it over that app. It is a CI TEST APK only.
 on:
   workflow_dispatch:
+  # Also validates this workflow itself when a pull request changes it
+  # (manual dispatch only becomes available once the file is on main).
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/android-debug.yml
 
 permissions:
   contents: read
@@ -35,7 +41,7 @@ jobs:
         run: git config --global core.autocrlf false
 
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Confirm Quran data bytes are unchanged by checkout
         shell: pwsh
@@ -44,15 +50,15 @@ jobs:
           Write-Output "public/data/quran.json SHA-256: $h"
           if ($h -ne "fab6e90867736262658b840b28b91aaab46ade99b058531e2cdc072931201680") { throw "quran.json bytes differ from the validated baseline." }
 
-      - name: Set up Node.js 22
-        uses: actions/setup-node@v4
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v5
         with:
-          node-version: "22"
+          node-version: "24"
           cache: npm
 
       # Android Gradle Plugin 8.13 needs JDK 17 or newer.
       - name: Set up Java 17 (Temurin)
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
@@ -185,7 +191,7 @@ jobs:
           "HIFZ_ARTIFACT=HifzJourney-CI-TEST-$env:HIFZ_BUILD_ID-NOT-FOR-UPDATE" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       - name: Upload CI test APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ env.HIFZ_ARTIFACT }}
           path: apk-out/
