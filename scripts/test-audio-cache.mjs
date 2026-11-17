@@ -128,7 +128,7 @@ test("Players use the shared cache: main player, lesson repeat player, Urdu reco
   assert.match(lesson, /playTrack\(a, arabicTrack/);
   assert.doesNotMatch(lesson, /a\.src = audioUrl/);
   const sheet = await src("src/components/AyahQuickSheet.tsx");
-  assert.match(sheet, /resolveUrduAudio/); assert.match(sheet, /playUrduRecording\(recording\.track/);
+  assert.match(sheet, /resolveUrduAudio/); assert.match(sheet, /shamshadTrack\(s, a\)/); assert.match(sheet, /playUrduRecording\(track, onRec\)/);
   assert.match(await src("src/lib/urduRecording.ts"), /playTrack\(el, track/, "recorded Urdu uses the shared cache");
   assert.match(sheet, /speakUrdu\(/, "existing Urdu TTS is kept");
   assert.match(sheet, /URDU_TTS_LABEL/);
