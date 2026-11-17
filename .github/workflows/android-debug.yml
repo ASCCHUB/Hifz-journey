@@ -95,7 +95,13 @@ jobs:
           $zip = Join-Path $env:RUNNER_TEMP "gradle-$env:GRADLE_VERSION-bin.zip"
           $base = "https://services.gradle.org/distributions/gradle-$env:GRADLE_VERSION-bin.zip"
           Invoke-WebRequest -Uri $base -OutFile $zip
-          $expected = (Invoke-WebRequest -Uri "$base.sha256").Content.ToString().Trim()
+          # Pinned SHA-256 of the official gradle-8.14.3-bin.zip, also cross-checked against Gradle's published .sha256.
+          $pinned = "bd71102213493060956ec229d946beee57158dbd89d0e62b91bca0fa2c5f3531"
+          $shaFile = "$zip.sha256"
+          Invoke-WebRequest -Uri "$base.sha256" -OutFile $shaFile
+          $published = (Get-Content -LiteralPath $shaFile -Raw).Trim()
+          if ($published -ne $pinned) { throw "Gradle's published checksum ($published) differs from the pinned checksum." }
+          $expected = $pinned
           $actual = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
           if ($actual -ne $expected) { throw "Gradle download checksum mismatch ($actual vs $expected)." }
           $dest = Join-Path $env:USERPROFILE ".gradle\wrapper\dists\gradle-$env:GRADLE_VERSION-bin\ci"
