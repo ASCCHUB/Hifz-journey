@@ -24,20 +24,13 @@ test("Native Android keeps the display awake in foreground and supports disablin
   assert.match(src, /clearFlags\(WindowManager\.LayoutParams\.FLAG_KEEP_SCREEN_ON\)/);
   assert.match(src, /runOnUiThread/);
 });
-test("Movable instructions support touch, keyboard, reset and viewport clamping", async () => {
-  const hook = await read("src/lib/useMovableDock.ts");
-  for (const s of ["onPointerDown", "onPointerMove", "onPointerUp", "setPointerCapture", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "ResizeObserver", "window.innerHeight"]) assert.ok(hook.includes(s), s);
-  const l = await read("src/components/MushafLesson.tsx");
-  assert.match(l, /useMovableDock\(\)/);
-  assert.match(l, /style=\{floatingDock\.style\}/);
-  assert.match(l, /\{\.\.\.floatingDock\.handle\}/);
-  const r = await read("src/components/MushafReader.tsx");
-  assert.match(r, /useMovableDock\(\)/);
-  assert.match(r, /mushaf-reading-dock/);
-  assert.match(r, /\{\.\.\.recallDock\.handle\}/);
-  assert.match(r, /\{recallExtras && <SimilarButton/);
-  assert.match(r, /\{readDockOpen && <div/);
+test("Study controls are fixed and compact; legacy drag helper is no longer used", async () => {
+  const learn = await read("src/components/MushafLesson.tsx");
+  const reader = await read("src/components/MushafReader.tsx");
   const css = await read("src/app/globals.css");
-  assert.match(css, /mushaf-reading-dock/);
-  assert.match(css, /touch-action: none/);
+  assert.match(learn, /mushaf-lesson-compact/);
+  assert.match(css, /\.mushaf-lesson-panel\.mushaf-lesson-compact/);
+  assert.doesNotMatch(learn, /useMovableDock|floatingDock/);
+  assert.doesNotMatch(reader, /useMovableDock|recallDock\.handle|readDock\.handle/);
+  assert.match(reader, /\{readDockOpen && <div/);
 });

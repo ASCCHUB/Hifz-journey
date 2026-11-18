@@ -13,10 +13,11 @@ test("Read, Learn and Recall command docks stay fixed while tapping Quran elsewh
  assert.match(learn, /document\.addEventListener\("pointerdown", collapseOnOutside\)/);
  assert.match(learn, /target\.closest\("\.mushaf-lesson-panel"\)/);
  assert.match(learn, /setCompactState\(true\)/);
- assert.match(learn, /data-moved=\{floatingDock\.moved\}/);
+ assert.doesNotMatch(learn, /floatingDock|Move<\/button>|Reset<\/button>/);
+ assert.match(learn, /mushaf-lesson-compact/);
  const readUI = await read("src/components/MushafReader.tsx");
- assert.match(readUI, /data-moved=\{readDock\.moved\}/);
- assert.match(readUI, /data-moved=\{recallDock\.moved\}/);
+ assert.doesNotMatch(readUI, /readDock\.handle|recallDock\.handle/);
+ assert.match(readUI, /mushaf-recall-dock/);
  assert.match(readUI, /setReadDockOpen\(false\)/);
  assert.match(readUI, /setRecallExtras\(false\)/);
  assert.match(readUI, /!t\.closest\("\.mushaf-tools-button, \.mushaf-tools-menu"\)/);
@@ -36,5 +37,5 @@ test("Icon controls are inline SVG with readable labels and no external image as
  assert.match(recite, /<ControlIcon name="mic" \/> Recite/);
  const mushaf = await read("src/components/MushafReader.tsx");
  assert.match(mushaf, /<ControlIcon name="location" \/> Go to Ayah/);
- assert.match(mushaf, /<ControlIcon name="pin" \/> Move/);
+ assert.doesNotMatch(mushaf, /<ControlIcon name="pin" \/> Move/);
 });

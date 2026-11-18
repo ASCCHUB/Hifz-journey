@@ -299,7 +299,7 @@ export default function LiveRecitation({ items, title, onClose, auto = false }: 
           return renderWord(w, i);
         })}
       </p>)}
-      {partial && listening && <p className="q mt-3 rounded-xl bg-gold/10 px-3 py-1 text-xl text-gold" dir="rtl" aria-live="polite">… {partial}</p>}
+      {partial && listening && <span className="sr-only" lang="ar" dir="rtl" aria-live="polite">{partial}</span>}
       {status === "stopped" && <Summary summary={summary} secs={elapsed} weak={weakAyahs} saved={saved} onSave={save} onRetry={() => { setStatus("idle"); setSegments(new Map()); setRuns(initialRuns()); setVerdicts({}); setSaved(null); setElapsed(0); before.current = 0; session.current = null; segIdBase.current = 0; lastLocate.current = ""; }} onClose={onClose} />}
     </main>
 

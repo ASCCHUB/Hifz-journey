@@ -21,7 +21,9 @@ export default function ManualRevisionPicker({ onStart }: {
   onStart: (items: Ayah[], title: string) => void;
 }) {
   const [mode, setMode] = useState<Mode>("page");
-  const [page, setPage] = useState(1);
+  const [pageInput, setPageInput] = useState("1");
+  const page = Number(pageInput);
+  const validPage = /^\d+$/.test(pageInput) && page >= 1 && page <= 604;
   const [surah, setSurah] = useState(1);
   const [startAyah, setStartAyah] = useState(1);
   const [endAyah, setEndAyah] = useState(7);
@@ -29,6 +31,7 @@ export default function ManualRevisionPicker({ onStart }: {
   const core = Q();
 
   const start = () => {
+    if (mode === "page" && !validPage) return;
     let first: Ayah, after: Ayah | null, title: string;
     if (mode === "page") {
       first = [core.lay[page - 1][0], core.lay[page - 1][1]];
@@ -50,7 +53,7 @@ export default function ManualRevisionPicker({ onStart }: {
     const items = collectRevisionRange(first, after);
     if (items.length) onStart(items, title);
   };
-  const valid = mode !== "ayah" || (startAyah >= 1 && endAyah <= count(surah) && endAyah >= startAyah);
+  const valid = mode === "page" ? validPage : mode !== "ayah" || (startAyah >= 1 && endAyah <= count(surah) && endAyah >= startAyah);
   return <details className="card flex flex-col gap-3" data-testid="manual-revision">
     <summary className="cursor-pointer text-lg font-bold">Manual revision · choose any passage</summary>
     <div className="mt-3 flex flex-col gap-3">
@@ -61,7 +64,7 @@ export default function ManualRevisionPicker({ onStart }: {
             aria-pressed={mode === x} onClick={() => setMode(x)}>{x === "ayah" ? "Ayahs" : x === "juz" ? "Juz" : x === "surah" ? "Surah" : "Page"}</button>)}
       </div>
       {mode === "page" && <label className="text-sm">Page (1–604)
-        <input className="field mt-1" type="number" min={1} max={604} value={page} onChange={(e) => setPage(Math.min(604, Math.max(1, +e.target.value || 1)))}/></label>}
+        <input className="field mt-1" type="number" min={1} max={604} inputMode="numeric" value={pageInput} onChange={(e) => setPageInput(e.target.value)} onBlur={() => { if (validPage) setPageInput(String(page)); }}/></label>}
       {mode === "juz" && <label className="text-sm">Juz
         <select className="field mt-1" value={juz} onChange={(e) => setJuz(+e.target.value)}>
           {Array.from({ length: 30 }, (_, i) => <option key={i} value={i + 1}>Juz {i + 1}</option>)}</select></label>}
@@ -73,7 +76,7 @@ export default function ManualRevisionPicker({ onStart }: {
         <label className="text-sm">From Ayah<input className="field mt-1" type="number" min={1} max={count(surah)} value={startAyah} onChange={(e) => setStartAyah(+e.target.value)}/></label>
         <label className="text-sm">To Ayah<input className="field mt-1" type="number" min={1} max={count(surah)} value={endAyah} onChange={(e) => setEndAyah(+e.target.value)}/></label>
       </div>}
-      {!valid && <p role="alert" className="text-sm text-weak">Choose a valid Ayah range within this Surah.</p>}
+      {!valid && <p role="alert" className="text-sm text-weak">{mode === "page" ? "Enter a page number from 1 to 604." : "Choose a valid Ayah range within this Surah."}</p>}
       <button type="button" className="btn-primary" disabled={!valid} onClick={start}>Start manual revision</button>
       <p className="text-xs text-muted">Manual revision does not remove or mark any scheduled task Done. Grade your recitation in the practice screen.</p>
     </div>
