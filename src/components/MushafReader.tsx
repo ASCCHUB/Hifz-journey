@@ -235,6 +235,7 @@ function MushafView({ reciteLanding = false }: { reciteLanding?: boolean }) {
     enabled: mode === "learn", page: pg, pageAyahs: ayahs, halves,
     from: params.get("from"), to: params.get("to"), portionParam: params.get("portion"), pathId: params.get("pathId") || undefined,
     returnUrl: `/mushaf?${params.toString().replace(/%3A/gi, ":")}`,
+    onExit: () => router.push(`/mushaf?p=${pg}&mode=read`),
     setPortion: (x) => router.replace(`/mushaf?p=${pg}&mode=learn${x ? `&from=${x.from}&to=${x.to}` : ""}${params.get("pathId") && x ? `&pathId=${encodeURIComponent(params.get("pathId")!)}` : ""}`, { scroll: false }),
   });
   const cur = ayahs[rIdx]; const curK = cur ? key(cur[0], cur[1]) : "";
