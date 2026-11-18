@@ -54,3 +54,18 @@ test("Recite uses one Quran-wide microphone flow and word feedback on Mushaf, no
   assert.doesNotMatch(recite, /bg-gold\/10 px-3 py-1 text-xl text-gold/);
   assert.match(recite, /aria-label=\{hidden \? "Show Quran text" : "Hide Quran text"\}/);
 });
+
+
+test("Learning dock renders evaluated JSX labels with no literal dollar prefixes", async () => {
+  const src = await read("src/components/MushafLesson.tsx");
+  const start = src.indexOf('panel = <section');
+  assert.ok(start > 0, "learning control JSX exists");
+  const jsx = src.slice(start);
+  for (const bad of [">$", " ${exit}", " ${player.err", " ${prep", " ${showMeaning", " ${hintsAllowed", " ${step.instruction", "(${rated})"]) {
+    assert.ok(!jsx.includes(bad), `Unexpected literal dollar prefix: ${bad}`);
+  }
+  assert.match(jsx, />\{MARK_LABEL\[m\]\}<\/button>/);
+  assert.match(jsx, />\{activeAyah \?/);
+  assert.match(jsx, /\{stepIdx \+ 1\}\/\{steps.length\}/);
+  assert.match(jsx, /\{player.err && <p/);
+});
