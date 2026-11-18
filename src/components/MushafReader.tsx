@@ -11,7 +11,6 @@ import SearchDialog from "@/components/SearchDialog";
 import LocationNavigator from "@/components/LocationNavigator";
 import { arNum, isValidAyah, juzOf, key, pageContent, pageOf, Q, ref, sarabic, sname, text } from "@/lib/quran";
 import { readerBackAction, scrollMotion } from "@/lib/readerMode";
-import { useMovableDock } from "@/lib/useMovableDock";
 import ControlIcon from "@/components/ControlIcon";
 import { addHist, logAdd, markRead, today, update, useStore } from "@/lib/store";
 import Link from "next/link";
@@ -32,7 +31,6 @@ const MARK_LABEL: Record<Mark, string> = { ok: "Recited correctly", hes: "Needed
 
 function MushafView({ reciteLanding = false }: { reciteLanding?: boolean }) {
   const router = useRouter(); const params = useSearchParams(); const st = useStore(); const audio = useAudio();
-  const recallDock = useMovableDock(); const readDock = useMovableDock();
   const [readDockOpen, setReadDockOpen] = useState(false);
   const [recallExtras, setRecallExtras] = useState(false);
   const queryS = Number(params.get("s")), queryA = Number(params.get("a"));
@@ -389,10 +387,9 @@ function MushafView({ reciteLanding = false }: { reciteLanding?: boolean }) {
       </div>}
 
       {mode === "read" && !readerFocus && !reciteLanding && <section
-        className="mushaf-reading-dock" data-moved={readDock.moved} style={readDock.style} aria-label="Movable reading controls">
+        className="mushaf-reading-dock" aria-label="Movable reading controls">
         <div className="flex flex-wrap items-center gap-1">
-          <button type="button" className="btn btn-sm" {...readDock.handle}><ControlIcon name="pin" /> Move</button>
-          {readDock.moved && <button type="button" className="btn btn-sm" onClick={readDock.reset}>Reset</button>}
+          }
           <button type="button" className="btn btn-sm" aria-expanded={readDockOpen} onClick={() => setReadDockOpen((v) => !v)}><ControlIcon name={readDockOpen ? "chevron-up" : "chevron-down"} /> {readDockOpen ? "Hide reading controls" : "Reading controls"}</button>
         </div>
         {readDockOpen && <div className="mt-2 flex flex-wrap gap-2">
@@ -426,14 +423,14 @@ function MushafView({ reciteLanding = false }: { reciteLanding?: boolean }) {
       {showLocationPicker && <LocationNavigator initial={c.first as [number, number]} onClose={() => setShowLocationPicker(false)} onOpen={(s, a) => router.replace(`/mushaf?s=${s}&a=${a}`)} />}
       {similarOf && <SimilarSheet s={similarOf[0]} a={similarOf[1]} onClose={() => setSimilarOf(null)} />}
       {similarOnPage > 0 && <p className="text-xs text-muted">{similarOnPage} Ayah{similarOnPage === 1 ? "" : "s"} on this page {similarOnPage === 1 ? "has" : "have"} listed similar Ayahs. In Recall, use the Similar Ayahs button; in Read, tap an Ayah.</p>}
-      {recall && <section style={saved === null ? recallDock.style : undefined} data-moved={recallDock.moved} className={`card flex flex-col gap-2 ${saved === null ? "mushaf-recall-dock" : ""}`} aria-label="Recall this page" aria-live="polite">
+      {recall && <section className={`card flex flex-col gap-2 ${saved === null ? "mushaf-recall-dock" : ""}`} aria-label="Recall this page" aria-live="polite">
         {saved === null ? <>
-          <div className="flex flex-wrap items-center justify-between gap-2"><b>Recite page {pg} from memory</b><span className="text-sm text-muted">{rated} of {ayahs.length} rated</span><div className="flex flex-wrap gap-1"><button type="button" className="btn btn-sm" {...recallDock.handle}><ControlIcon name="pin" /> Move</button>{recallDock.moved && <button type="button" className="btn btn-sm" onClick={recallDock.reset}>Reset</button>}<button type="button" className="btn btn-sm" aria-expanded={recallExtras} onClick={() => setRecallExtras((v) => !v)}><ControlIcon name={recallExtras ? "chevron-up" : "chevron-down"} /> {recallExtras ? "Less" : "More"}</button></div></div>
+          <div className="flex flex-wrap items-center justify-between gap-2"><b>Recite page {pg} from memory</b><span className="text-sm text-muted">{rated} of {ayahs.length} rated</span><div className="flex flex-wrap gap-1"><button type="button" className="btn btn-sm" aria-expanded={recallExtras} onClick={() => setRecallExtras((v) => !v)}><ControlIcon name={recallExtras ? "chevron-up" : "chevron-down"} /> {recallExtras ? "Less" : "More"}</button></div></div>
           {cur && <>
-            <p className="text-sm">Now: <b>{sname(cur[0])} {cur[1]}</b>. Recite it, then rate yourself honestly.</p>
+            <p className="text-xs text-muted">Now: <b>{sname(cur[0])} {cur[1]}</b> · {rated}/{ayahs.length}</p>
             <div className="flex flex-wrap gap-2">
-              <button className="btn btn-sm" onClick={hint}>Hint (next word)</button>
-              <button className="btn btn-sm" onClick={peekAyah} disabled={!!checked[curK]}>Reveal Ayah</button>
+              {recallExtras && <button className="btn btn-sm" onClick={hint}>Hint (next word)</button>}
+              <button className="btn btn-sm" onClick={peekAyah} disabled={!!checked[curK]}><ControlIcon name="eye" /> Reveal</button>
               {/* Opening Similar Ayahs shows the Ayah's text, so it counts as help, like a hint. */}
               {recallExtras && <SimilarButton s={cur[0]} a={cur[1]} onOpen={() => { setHelp((h) => ({ ...h, [curK]: true })); setSimilarOf(cur); }} />}
             </div>
