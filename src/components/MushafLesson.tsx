@@ -185,38 +185,21 @@ export function useMushafLesson(o: {
     if (!o.enabled || !pageAyahs.some(([ps, pa]) => ps === s && pa === a)) return false;
     if (!running) { if (!lesson?.completedAt) start(false, [s,a]); else start(true, [s,a]); return true; }
     if (lesson?.mode === "manual") { if (portion?.some((x) => x[0] === s && x[1] === a)) setManualSel([s, a]); return true; }
-    return true; // guided: taps never open translations or reveal anything mid-step
+    // Tap the Ayah to begin its first guided step; never mark intervening Ayahs as learned.
+    const next = steps.findIndex((st) => st.kind === "listen" && st.units.some((u) => u.s === s && u.a === a));
+    if (next >= 0 && next !== stepIdx) { player.stop(); goStep(next); }
+    return true;
   };
 
   // ------------------------------------------------------------ chooser (above the page)
-  const half = (label: string, xs: Ayah[], p: Portion) => <button key={p} aria-pressed={!!(portion && portion.length === xs.length && kk(portion[0]) === kk(xs[0]))} className={`btn btn-sm !min-h-[52px] flex-col !items-start justify-center text-left leading-tight ${portion && portion.length === xs.length && kk(portion[0]) === kk(xs[0]) ? "btn-on" : ""}`} onClick={() => o.setPortion({ from: kk(xs[0]), to: kk(xs[xs.length - 1]) })}>
-    <span><b>{label}</b><br /><span className="text-xs text-muted">{xs.length} ayah{xs.length === 1 ? "" : "s"}{lessonBadge(xs)}</span></span></button>;
-  const lessonBadge = (xs: Ayah[]) => { const l = st.lessons?.[portionLesson(page, pageAyahs, xs, "learn", (id) => !!st.lessons?.[id]).id]; return !l ? "" : l.completedAt ? " · learned" : ` · in progress (step ${l.step + 1})`; };
   let chooser: ReactNode = null;
-  // Compact chooser so the page stays close: portion on one row, one Start button, options collapsed.
-  if (o.enabled && !running && savedCount === null && !(lesson?.completedAt && portion)) chooser = <section className="mushaf-lesson-chooser card flex flex-col gap-2 !py-3" aria-label="Learn this page">
-    <b>Learn page {page}</b>
-    <div className={`grid gap-2 ${halves.second.length > 0 ? "grid-cols-3" : "grid-cols-1"}`}>
-      {halves.second.length > 0 && half("First half", halves.first, "first")}
-      {halves.second.length > 0 && half("Second half", halves.second, "second")}
-      {half("Whole page", pageAyahs, "page")}
-    </div>
-    {portion && meta && !lesson && <>
-      <button className="btn-primary" onClick={() => start()}>Start {mode === "guided" ? "guided" : "manual"} lesson · {portion.length} ayah{portion.length === 1 ? "" : "s"}</button>
-      <details className="text-sm"><summary className="cursor-pointer font-semibold text-accent">Lesson options</summary>
-        <div className="mt-2 flex flex-col gap-2">
-          <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="How do you want to learn?">
-            {([["guided", "Guided"], ["manual", "Manual"]] as const).map(([v, l]) => <button key={v} role="radio" aria-checked={mode === v} className={`btn btn-sm ${mode === v ? "btn-on" : ""}`} onClick={() => setMode(v)}>{l}</button>)}
-            {mode === "guided" && <select className="field !w-auto !py-1 text-sm" aria-label="Level" value={level} onChange={(e) => setLevel(e.target.value as Level)}><option value="guided">Guided level · most help</option><option value="standard">Standard level</option><option value="challenge">Challenge · no hints</option></select>}
-          </div>
-          <p className="text-xs text-muted">{mode === "guided" ? "Listen → understand → repeat → hide → recall each Ayah, joining 1–2, 1–3 … then a full recitation. Only that final recitation is saved to your Hifz record." : "Tap an Ayah on the page, then play, hide and rate it yourself. Only Ayahs you rate are saved."}</p>
-          {halves.second.length > 0 && <p className="text-xs text-muted">Halves split at the first Ayah that starts on line 8 or later of the 15 lines, so a half is never cut mid-Ayah.</p>}
-          <button className="self-start text-sm underline" onClick={() => setShowMethod((v) => !v)}>How this method works</button>
-        </div>
-      </details>
-    </>}
-    {showMethod && <MethodIntro onClose={() => setShowMethod(false)} />}
-  </section>;
+  // Page selection is sufficient. Tap an Ayah to begin at that Ayah, or press Start for the full page.
+  if (o.enabled && !running && savedCount === null && !(lesson?.completedAt && portion)) {
+    chooser = <section className="mushaf-lesson-chooser flex items-center gap-2 rounded-xl border border-line bg-surface p-2" aria-label="Learn this page">
+      <span className="min-w-0 flex-1 text-sm">Page {page} · Tap an Ayah to learn it</span>
+      <button type="button" className="btn-primary btn-sm shrink-0" onClick={() => start()}>Start page</button>
+    </section>;
+  }
 
   // ------------------------------------------------------------ finished
   let panel: ReactNode = null;
