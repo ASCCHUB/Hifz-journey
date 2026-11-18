@@ -225,23 +225,26 @@ export function useMushafLesson(o: {
     if (lesson.mode === "manual") {
       const rated = portion.filter(([s, a]) => lesson.results[finalKey(s, a)]).length;
       const sel = manualSel; const f = sel ? manualFade[kk(sel)] | 0 : 0; const r = sel ? lesson.results[finalKey(sel[0], sel[1])] : undefined;
-      panel = <section ref={(el) => { panelRef.current = el; }} data-compact={compact} data-moved={floatingDock.moved} style={floatingDock.style} className={`mushaf-lesson-panel card sticky bottom-[72px] z-10 flex max-h-[45vh] flex-col overflow-y-auto overscroll-contain lg:bottom-4 ${compact ? "gap-1.5 !p-2.5" : "gap-2"}`} aria-label="Manual learning" aria-live="polite">
-        <div className="lesson-dock-header flex items-center justify-between gap-2"><div className="min-w-0"><div className="text-xs font-bold uppercase tracking-wide text-accent">Manual learning</div><div className="truncate text-sm font-semibold">{meta.title} · {rated} of {portion.length} rated</div></div><div className="flex shrink-0 flex-wrap gap-1"><button type="button" className="btn btn-sm" {...floatingDock.handle}><ControlIcon name="pin" /> Move</button>{floatingDock.moved && <button type="button" className="btn btn-sm" onClick={floatingDock.reset}>Reset</button>}<button className="btn btn-sm" aria-expanded={!compact} aria-label={compact ? "Expand lesson controls" : "Collapse lesson controls"} onClick={() => setCompact(!compact)}><ControlIcon name={compact ? "chevron-down" : "chevron-up"} /> {compact ? "Expand" : "Collapse"}</button>{exit}</div></div>
-        <button type="button" className={`btn btn-sm self-start ${visibility === "full" ? "" : "btn-on"}`} aria-pressed={visibility !== "full"} onClick={() => setVisibility(visibility === "full" ? "unlearned" : "full")}>{visibility === "full" ? "Hide rest of page" : "Show full page"}</button><details className="text-xs"><summary className="cursor-pointer font-semibold text-muted">Display options</summary><label className="mt-2 flex flex-wrap items-center gap-2 text-sm">Text visibility<select className="field !w-auto !min-w-0 !py-1 text-sm" aria-label="Text visibility" value={visibility} onChange={(e) => setVisibility(e.target.value as TextVisibility)}><option value="full">Show full page</option><option value="unlearned">Hide unlearned Ayahs</option><option value="current">Current Ayah only</option></select></label></details>
-        <div className="lesson-dock-active text-sm"><b>{sel ? `${sname(sel[0])} ${sel[1]}` : "Choose an Ayah"}</b></div>
-        {!sel ? <p className="lesson-dock-instruction text-sm text-muted">Tap an Ayah on the page to work on it.</p> : <>
-          <p className="text-sm"><b>{sname(sel[0])} {sel[1]}</b>{r ? ` · ${MARK_LABEL[r]}` : ""}</p>
-          <div className="flex flex-wrap gap-2">
-            <button className="btn btn-sm" onClick={() => player.playing ? player.stop() : player.play([sel], repeat)}>{player.playing ? "■ Stop" : `▶ ×${repeat}`}</button>
-            <select className="field !w-auto !py-1 text-sm" aria-label="Repeat" value={repeat} onChange={(e) => setRepeat(+e.target.value)}>{[1, 3, 5, 7, 10].map((n) => <option key={n} value={n}>{n}×</option>)}</select>
-            <button className="btn btn-sm" onClick={() => setManualFade({ ...manualFade, [kk(sel)]: ((f + 1) % 4) as 0 | 1 | 2 | 3 })}>{["Hide half", "First letters", "Hide all", "Show text"][f]}</button>
-            <Link className="btn btn-sm" href={reciteHref([{ s: sel[0], a: sel[1] }])}>Check with microphone</Link>
+      panel = <section ref={(el) => { panelRef.current = el; }} data-compact={compact} className="mushaf-lesson-panel mushaf-lesson-compact card" aria-label="Manual lesson controls">
+        <div className="lesson-compact-heading flex items-center justify-between gap-2">
+          <span className="truncate text-xs font-semibold">${sel ? `${sname(sel[0])} ${sel[1]}` : `Page ${page} · Tap an Ayah`}</span>
+          <button type="button" className="btn btn-sm" aria-expanded={!compact} onClick={() => setCompact(!compact)}><ControlIcon name="settings" /> More</button>
+        </div>
+        {sel ? <>
+          <div className="lesson-compact-actions grid grid-cols-2 gap-2">
+            <button type="button" className="btn btn-sm" onClick={() => player.playing ? player.stop() : player.play([sel], repeat)}><ControlIcon name={player.playing ? "pause" : "play"} /> ${player.playing ? "Stop" : `Listen ×${repeat}`}</button>
+            <button type="button" className="btn btn-sm" onClick={() => setManualFade({ ...manualFade, [kk(sel)]: ((f + 1) % 4) as 0 | 1 | 2 | 3 })}><ControlIcon name="eye-off" /> ${["Hide half", "First letters", "Hide all", "Show text"][f]}</button>
           </div>
-          <div className="lesson-dock-ratings grid grid-cols-3 gap-2">{(["bad", "hes", "ok"] as Mark[]).map((m) => <button key={m} className={`btn btn-sm ${r === m ? "btn-on" : ""}`} onClick={() => update((d) => { const l = d.lessons?.[meta.id]; if (!l) return; l.results[finalKey(sel[0], sel[1])] = m; l.updatedAt = Date.now(); })}>{MARK_LABEL[m]}</button>)}</div>
-        </>}
-        {player.err && <p className="text-sm text-weak">{player.err}</p>}
-        <button className="btn-primary" disabled={!rated} onClick={finish}>Save my ratings ({rated}) and finish</button>
-        {!compact && <p className="text-xs text-muted">Rate an Ayah only after reciting it with the text hidden. Unrated Ayahs are not added to your record.</p>}
+          <div className="lesson-dock-ratings grid grid-cols-3 gap-1.5">${(["bad", "hes", "ok"] as Mark[]).map((m) => <button key={m} type="button" className={`btn btn-sm !px-1 !text-xs ${r === m ? "btn-on" : ""}`} onClick={() => update((d) => { const l = d.lessons?.[meta.id]; if (!l) return; l.results[finalKey(sel[0], sel[1])] = m; l.updatedAt = Date.now(); })}>${MARK_LABEL[m]}</button>)}</div>
+        </> : <button type="button" className="btn btn-sm" onClick={() => start(true)}>Restart guided lesson</button>}
+        {!compact && <div className="lesson-dock-more flex flex-wrap items-center gap-2">
+          <label className="text-xs">Repeat <select className="field !w-auto !py-1 text-sm" aria-label="Repeat" value={repeat} onChange={(e) => setRepeat(Number(e.target.value))}>${[1, 3, 5, 7, 10].map(n => <option key={n} value={n}>${n}×</option>)}</select></label>
+          <button type="button" className="btn btn-sm" onClick={() => setVisibility(visibility === "full" ? "unlearned" : "full")}>${visibility === "full" ? "Hide rest" : "Show page"}</button>
+          <Link className="btn btn-sm" href={reciteHref([{ s: sel?.[0] ?? portion[0][0], a: sel?.[1] ?? portion[0][1] }])}><ControlIcon name="mic" /> Microphone</Link>
+          <button type="button" className="btn btn-sm" onClick={finish} disabled={!rated}>Save ratings (${rated})</button>
+          ${exit}
+        </div>}
+        ${player.err && <p role="alert" className="text-xs text-weak">${player.err}</p>}
       </section>;
     } else if (step) {
       const act = activity(step); const isFinal = step.kind === "recall" && step.scope === "page";
@@ -257,46 +260,35 @@ export function useMushafLesson(o: {
       const prep = step.kind === "listen" || step.kind === "read" || step.kind === "fade";
       const matchedJuz = activeAyah ? referenceJuzForAyah(activeAyah[0], activeAyah[1], availableRefJuz) : null;
       const visualMapHref = matchedJuz ? referenceMapHref(matchedJuz, o.returnUrl) : "";
-      panel = <section ref={(el) => { panelRef.current = el; }} data-compact={compact} data-moved={floatingDock.moved} style={floatingDock.style} className={`mushaf-lesson-panel card sticky bottom-[72px] z-10 flex max-h-[45vh] flex-col overflow-y-auto overscroll-contain lg:bottom-4 ${compact ? "gap-1.5 !p-2.5" : "gap-2"}`} aria-label="Lesson" aria-live="polite">
-        <div className="lesson-dock-header flex items-center justify-between gap-2">
-          <div className="min-w-0"><div className="text-xs font-bold uppercase tracking-wide text-accent">{act}{isFinal && cur ? ` · ${cursor + 1} of ${portion.length}` : ` · Ayah ${step.ayahIndex} of ${step.ayahCount}`}</div>
-            <div className="truncate text-xs text-muted">{meta.title} · step {stepIdx + 1} of {steps.length}</div></div>
-          <div className="flex shrink-0 flex-wrap gap-1"><button type="button" className="btn btn-sm" {...floatingDock.handle}><ControlIcon name="pin" /> Move</button>{floatingDock.moved && <button type="button" className="btn btn-sm" onClick={floatingDock.reset}>Reset</button>}<button className="btn btn-sm" aria-expanded={!compact} aria-label={compact ? "Expand lesson controls" : "Collapse lesson controls"} onClick={() => setCompact(!compact)}><ControlIcon name={compact ? "chevron-down" : "chevron-up"} /> {compact ? "Expand" : "Collapse"}</button>{exit}</div>
+      panel = <section ref={(el) => { panelRef.current = el; }} data-compact={compact} className="mushaf-lesson-panel mushaf-lesson-compact card" aria-label="Guided learning controls" aria-live="polite">
+        <div className="lesson-compact-heading flex items-center justify-between gap-2">
+          <div className="min-w-0 truncate text-xs font-semibold">${activeAyah ? `${sname(activeAyah[0])} ${activeAyah[1]}` : cur ? `${sname(cur[0])} ${cur[1]}` : `Page ${page}`} <span className="text-muted">· ${act} · ${stepIdx + 1}/${steps.length}</span></div>
+          <button type="button" className="btn btn-sm" aria-expanded={!compact} onClick={() => setCompact(!compact)}><ControlIcon name="settings" /> More</button>
         </div>
-        <div className="lesson-dock-active flex items-center justify-between gap-2 text-sm"><b>{activeAyah ? `${sname(activeAyah[0])} ${activeAyah[1]}` : isFinal && cur ? `${sname(cur[0])} ${cur[1]}` : `Ayah ${step.ayahIndex}`}</b><span className="text-xs text-muted">{stepIdx + 1} / {steps.length}</span></div>
-        <div className="lesson-dock-progress h-1.5 overflow-hidden rounded-full bg-line" role="progressbar" aria-label="Lesson progress" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}><div className="h-full bg-accent" style={{ width: `${pct}%` }} /></div>
-        <button type="button" className={`btn btn-sm self-start ${visibility === "full" ? "" : "btn-on"}`} aria-pressed={visibility !== "full"} onClick={() => setVisibility(visibility === "full" ? "unlearned" : "full")}>{visibility === "full" ? "Hide rest of page" : "Show full page"}</button><details className="text-xs"><summary className="cursor-pointer font-semibold text-muted">Display options</summary><label className="mt-2 flex flex-wrap items-center gap-2 text-sm">Text visibility<select className="field !w-auto !min-w-0 !py-1 text-sm" aria-label="Text visibility" value={visibility} onChange={(e) => setVisibility(e.target.value as TextVisibility)}><option value="full">Show full page</option><option value="unlearned">Hide unlearned Ayahs</option><option value="current">Current Ayah only</option></select></label></details>
-        {compact && <p className="lesson-dock-instruction truncate text-sm font-semibold" title={step.instruction}>{isFinal && cur ? `Page test · ${ref(cur[0], cur[1])}: recite, show, rate.` : step.instruction}</p>}
-        {!compact && <p className="lesson-dock-instruction text-sm font-semibold leading-snug">{isFinal && cur ? `Page test · ${ref(cur[0], cur[1])}: recite it without looking, then show it and rate yourself honestly. Only this test is saved.` : step.instruction}</p>}
-
-        {(step.kind === "listen" || step.kind === "read") && <div className="lesson-audio-controls flex flex-wrap items-center gap-2">
-          <button className="btn btn-sm" onClick={() => player.playing ? player.stop() : player.play(stepAyahs, repeat)}>{player.playing ? "■ Stop" : `▶ Listen ×${repeat}`}</button>
-          <select className="field !w-auto !py-1 text-sm" aria-label="Repeat" value={repeat} onChange={(e) => setRepeat(+e.target.value)}>{[1, 3, 5, 7, 10].map((n) => <option key={n} value={n}>{n}×</option>)}</select>
-          <button className="btn btn-sm" aria-expanded={showMeaning} onClick={() => { setShowMeaning((v) => !v); if (compact) setCompact(false); }}>Meaning</button>
-          {partial && !compact && <span className="text-xs text-muted">Audio plays the whole Ayah.</span>}
-        </div>}
-        {showMeaning && "units" in step && <><Meaning units={step.units} />{stepAyahs.slice(0, 1).map(([s, a]) => <MapCue key={`${s}:${a}`} s={s} a={a} />)}</>}
-        {prep && matchedJuz && <Link className="btn btn-sm self-start" href={visualMapHref} aria-label={`View Juz ${matchedJuz} Mind Map for ${ref(activeAyah![0], activeAyah![1])}`}>Visual Memory Map · View Juz Mind Map</Link>}
-        {player.err && <p className="text-sm text-weak">{player.err}</p>}
-        {step.kind === "fade" && step.fade === 1 && <div className="flex flex-wrap items-center gap-2"><span className={`text-sm text-muted ${compact ? "sr-only" : ""}`}>{fadeLevel === 1 ? "Half the words are hidden." : fadeLevel === 2 ? "Only first letters are shown." : "All words are hidden."}</span>{fadeLevel < 3 && <button className="btn btn-sm" onClick={() => setFadeLevel((f) => (f + 1) as 1 | 2 | 3)}>Hide more</button>}</div>}
-
-        {canRecall && !shown && <div className="lesson-recall-actions flex flex-wrap gap-2">
-          {hintsAllowed && <button className="btn btn-sm" disabled={reveal >= limit} onClick={() => setReveal((r) => Math.min(r + 1, limit))}>Hint: next word</button>}
-          <button className="btn-primary btn-sm" onClick={() => setShown(true)}>I have recited it · show</button>
-          <Link className="btn btn-sm" href={reciteHref(units)}>Check with microphone</Link>
-        </div>}
-        {!compact && canRecall && !shown && partial && <p className="text-xs text-muted">The microphone checks whole Ayahs, so it will check all of {stepAyahs.map((x) => ref(x[0], x[1])).join(", ")}, not only this part.</p>}
-        {canRecall && shown && <>
-          {!compact && <p className="text-xs text-muted">Compare with the page. {reveal > 0 ? "You used a hint, so a correct recitation counts as needing help. " : ""}{isFinal ? "Final rating: saved when you finish." : "Practice rating: kept in this lesson only."}</p>}
-          <div className="lesson-dock-ratings grid grid-cols-3 gap-2">{(["bad", "hes", "ok"] as Mark[]).map((m) => <button key={m} className={`btn btn-sm ${m === "bad" ? "!border-weak !text-weak" : m === "hes" ? "!border-revise !text-revise" : "!border-strong !text-strong"}`} onClick={() => rate(m)}>{MARK_LABEL[m]}</button>)}</div>
-        </>}
-
-        <div className="lesson-dock-primary flex gap-2">
-          <button className="btn btn-sm" disabled={stepIdx === 0} onClick={() => goStep(stepIdx - 1)}>Back</button>
-          {prep && <button className="btn btn-sm" title="Skipped steps are never counted as memorized" onClick={() => goStep(nextRecallStep(steps, stepIdx))}>Skip preparation</button>}
-          {prep && <button className="btn-primary btn-sm flex-1" onClick={() => { player.stop(); goStep(stepIdx + 1); }}>Next</button>}
-          {allRated && <button className="btn-primary btn-sm flex-1" onClick={finish}>Finish &amp; save</button>}
+        <div className="lesson-compact-actions flex gap-2">
+          {(step.kind === "listen" || step.kind === "read") && <button type="button" className="btn btn-sm flex-1" onClick={() => player.playing ? player.stop() : player.play(stepAyahs, repeat)}><ControlIcon name={player.playing ? "pause" : "play"} /> ${player.playing ? "Stop" : `Listen ×${repeat}`}</button>}
+          {step.kind === "fade" && <button type="button" className="btn btn-sm flex-1" onClick={() => setFadeLevel((v) => v < 3 ? (v + 1) as 1 | 2 | 3 : 1)}><ControlIcon name="eye-off" /> ${fadeLevel === 3 ? "Show clues" : "Hide more"}</button>}
+          {canRecall && !shown && <>
+            ${hintsAllowed && <button type="button" className="btn btn-sm flex-1" disabled={reveal >= limit} onClick={() => setReveal((v) => Math.min(v + 1, limit))}>Hint</button>}
+            <button type="button" className="btn-primary btn-sm flex-1" onClick={() => setShown(true)}><ControlIcon name="eye" /> Check</button>
+          </>}
+          {prep && <button type="button" className="btn-primary btn-sm flex-1" onClick={() => { player.stop(); goStep(stepIdx + 1); }}>Next <ControlIcon name="arrow-right" /></button>}
+          {allRated && <button type="button" className="btn-primary btn-sm flex-1" onClick={finish}>Finish & save</button>}
         </div>
+        {canRecall && shown && <div className="lesson-dock-ratings grid grid-cols-3 gap-1.5">${(["bad","hes","ok"] as Mark[]).map(m => <button type="button" key={m} className={`btn btn-sm !px-1 !text-xs ${m === "bad" ? "!border-weak !text-weak" : m === "hes" ? "!border-revise !text-revise" : "!border-strong !text-strong"}`} onClick={() => rate(m)}>${MARK_LABEL[m]}</button>)}</div>}
+        {!compact && <div className="lesson-dock-more flex flex-wrap items-center gap-2 border-t border-line pt-2">
+          <label className="text-xs">Repeat <select className="field !w-auto !py-1 text-sm" aria-label="Repeat" value={repeat} onChange={(e) => setRepeat(Number(e.target.value))}>${[1,3,5,7,10].map(n => <option value={n} key={n}>${n}×</option>)}</select></label>
+          <button type="button" className="btn btn-sm" onClick={() => setVisibility(visibility === "full" ? "unlearned" : "full")}>${visibility === "full" ? "Hide rest" : "Show page"}</button>
+          <button type="button" className="btn btn-sm" disabled={stepIdx === 0} onClick={() => goStep(stepIdx - 1)}>Back</button>
+          ${prep && <button type="button" className="btn btn-sm" onClick={() => goStep(nextRecallStep(steps, stepIdx))}>Skip preparation</button>}
+          ${canRecall && <Link className="btn btn-sm" href={reciteHref(units)}><ControlIcon name="mic" /> Microphone</Link>}
+          ${prep && <button type="button" className="btn btn-sm" onClick={() => setShowMeaning(v => !v)}>Meaning</button>}
+          ${prep && matchedJuz && <Link className="btn btn-sm" href={visualMapHref}>Memory map</Link>}
+          ${exit}
+          <p className="w-full text-xs text-muted">${step.instruction}</p>
+          ${showMeaning && "units" in step && <Meaning units={step.units} />}
+        </div>}
+        ${player.err && <p role="alert" className="text-xs text-weak">${player.err}</p>}
       </section>;
     }
   }
