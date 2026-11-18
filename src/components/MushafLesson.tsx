@@ -37,7 +37,7 @@ export type MushafLessonApi = {
 export function useMushafLesson(o: {
   enabled: boolean; page: number; pageAyahs: Ayah[]; halves: { first: Ayah[]; second: Ayah[] };
   from: string | null; to: string | null; portionParam: string | null; pathId?: string;
-  setPortion: (p: { from: string; to: string } | null) => void; returnUrl: string;
+  setPortion: (p: { from: string; to: string } | null) => void; onExit: () => void; returnUrl: string;
 }): MushafLessonApi {
   const st = useStore(); const player = useRepeatPlayer();
   const { page, pageAyahs, halves } = o;
@@ -197,7 +197,7 @@ export function useMushafLesson(o: {
   if (o.enabled && !running && savedCount === null && !(lesson?.completedAt && portion)) {
     chooser = <section className="mushaf-lesson-chooser flex items-center gap-2 rounded-xl border border-line bg-surface p-2" aria-label="Learn this page">
       <span className="min-w-0 flex-1 text-sm">Page {page} · Tap an Ayah to learn it</span>
-      <button type="button" className="btn-primary btn-sm shrink-0" onClick={() => start()}>Start page</button>
+      <button type="button" className="btn-primary btn-sm shrink-0" onClick={() => start()}>Start guided lesson</button>
     </section>;
   }
 
@@ -220,7 +220,7 @@ export function useMushafLesson(o: {
 
   // ------------------------------------------------------------ teaching panel (running)
   if (running && lesson && portion && meta) {
-    const exit = <button className="btn btn-sm" onClick={() => { player.stop(); o.setPortion(null); }} title="Your place is saved after every step">Save &amp; exit</button>;
+    const exit = <button className="btn btn-sm" onClick={() => { player.stop(); o.onExit(); }} title="Your place is saved after every step">Save &amp; exit</button>;
     const reciteHref = (units: { s: number; a: number }[]) => `/recite?s=${units[0].s}&a=${units[0].a}&endS=${units[units.length - 1].s}&endA=${units[units.length - 1].a}&return=${encodeURIComponent(o.returnUrl)}`;
     if (lesson.mode === "manual") {
       const rated = portion.filter(([s, a]) => lesson.results[finalKey(s, a)]).length;
