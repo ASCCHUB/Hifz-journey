@@ -4,7 +4,6 @@
 // (same lesson ids as /learn), finishLesson() for the one-time evidence save. The Mushaf page draws the words;
 // this hook supplies (a) how each word looks for the current step and (b) the compact teaching panel.
 import { scrollMotion } from "@/lib/readerMode";
-import { useMovableDock } from "@/lib/useMovableDock";
 import ControlIcon from "@/components/ControlIcon";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -41,7 +40,6 @@ export function useMushafLesson(o: {
   setPortion: (p: { from: string; to: string } | null) => void; returnUrl: string;
 }): MushafLessonApi {
   const st = useStore(); const player = useRepeatPlayer();
-  const floatingDock = useMovableDock();
   const { page, pageAyahs, halves } = o;
   const kk = (x: Ayah) => `${x[0]}:${x[1]}`;
   // Selected portion: explicit from/to, or ?portion=page|first|second (from Home/Journey links).
@@ -54,16 +52,16 @@ export function useMushafLesson(o: {
     if (o.portionParam === "page") return pageAyahs;
     if (o.portionParam === "first" && halves.second.length) return halves.first;
     if (o.portionParam === "second" && halves.second.length) return halves.second;
-    return null;
+    return pageAyahs; // A chosen page is ready immediately; no extra portion chooser.
   }, [o.enabled, o.from, o.to, o.portionParam, pageAyahs, halves]); // eslint-disable-line react-hooks/exhaustive-deps
   const meta = portion ? portionLesson(page, pageAyahs, portion, "learn", (id) => !!st.lessons?.[id]) : null;
   const lesson = meta ? st.lessons?.[meta.id] : undefined;
-  const [mode, setMode] = useState<LessonState["mode"]>(st.tutor?.mode ?? "guided");
+  const [mode, setMode] = useState<LessonState["mode"]>("guided");
   const [level, setLevel] = useState<Level>(st.tutor?.level ?? "guided");
-  const [repeat, setRepeatState] = useState(st.tutor?.repeat ?? 3);
+  const [repeat, setRepeatState] = useState([1,3,5,7,10].includes(st.tutor?.repeat ?? 3) ? st.tutor!.repeat : 3);
   const visibility: TextVisibility = st.tutor?.visibility ?? "full";
   const setVisibility = (value: TextVisibility) => update((d) => { d.tutor = { ...(d.tutor || { mode: "guided", level: "guided", portion: "page", repeat: 3, updatedAt: 0 }), visibility: value, updatedAt: Date.now() }; });
-  const setRepeat = (n: number) => { setRepeatState(n); update((d) => { d.tutor = { ...(d.tutor || { mode: "guided", level: "guided", portion: "page", repeat: 3, updatedAt: 0 }), repeat: n, updatedAt: Date.now() }; }); };
+  const setRepeat = (n: number) => { if (![1,3,5,7,10].includes(n)) return; player.stop(); setRepeatState(n); update((d) => { d.tutor = { ...(d.tutor || { mode: "guided", level: "guided", portion: "page", repeat: 3, updatedAt: 0 }), repeat: n, updatedAt: Date.now() }; }); };
   const [shown, setShown] = useState(false); const [reveal, setReveal] = useState(0); const [fadeLevel, setFadeLevel] = useState<1 | 2 | 3>(1);
   const [savedCount, setSavedCount] = useState<number | null>(null); const [showMethod, setShowMethod] = useState(false); const [showMeaning, setShowMeaning] = useState(false);
   const running = !!(lesson && portion && !lesson.completedAt && savedCount === null);
@@ -80,8 +78,8 @@ export function useMushafLesson(o: {
   useEffect(() => { setShown(false); setReveal(0); setFadeLevel(1); setShowMeaning(false); player.stop(); }, [meta?.id, stepIdx, cursor]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { setSavedCount(null); setManualSel(null); setManualFade({}); }, [meta?.id]);
   // Compact panel (default on narrow screens): instruction and notes collapse; every action stays. Remembered per device.
-  const [compact, setCompactState] = useState<boolean>(() => { try { const v = localStorage.getItem("hifz-lesson-panel"); if (v) return v === "compact"; } catch { /* storage unavailable */ } return typeof window !== "undefined" && window.innerWidth < 640; });
-  const setCompact = (v: boolean) => { setCompactState(v); try { localStorage.setItem("hifz-lesson-panel", v ? "compact" : "full"); } catch { /* storage unavailable */ } };
+  const [compact, setCompactState] = useState(true); // Always start with only the primary commands visible.
+  const setCompact = (v: boolean) => setCompactState(v);
   const panelRef = useRef<HTMLElement | null>(null);
   // A tap outside the instruction window collapses optional controls, keeping the lesson running.
   useEffect(() => {
@@ -151,8 +149,9 @@ export function useMushafLesson(o: {
   }, [running, lesson?.id, meta?.id, step?.kind, stepIdx]);
   const patch = (fn: (l: LessonState) => void) => update((d) => { const l = meta && d.lessons?.[meta.id]; if (!l) return; fn(l); l.updatedAt = Date.now(); });
   const goStep = (n: number) => patch((l) => { l.step = Math.max(0, Math.min(steps.length - 1, n)); });
-  const start = (restart = false) => { if (!meta) return; update((d) => {
-    d.lessons ||= {}; if (restart || !d.lessons[meta.id] || d.lessons[meta.id].completedAt) d.lessons[meta.id] = newLesson("learn", meta.unit, meta.title, mode, level, Date.now(), o.pathId);
+  const start = (restart = false, at?: Ayah) => { if (!meta || !portion) return; update((d) => {
+    d.lessons ||= {}; if (restart || !d.lessons[meta.id] || d.lessons[meta.id].completedAt) d.lessons[meta.id] = newLesson("learn", meta.unit, meta.title, "guided", level, Date.now(), o.pathId);
+    if (at) { const first = buildSteps(portion, level).findIndex((step) => step.kind === "listen" && step.units.some((u) => u.s === at[0] && u.a === at[1])); if (first >= 0) d.lessons[meta.id].step = first; }
     d.tutor = { ...(d.tutor || { mode, level, portion: "page", repeat, updatedAt: 0 }), mode, level, portion: portion && portion.length < pageAyahs.length ? "half_page" : "page", updatedAt: Date.now() };
   }); setSavedCount(null); };
   const finish = () => { if (!meta || !portion) return; let n = 0; update((d) => { n = finishLesson(d, meta.id, portion, meta.unit, "learn", o.pathId ?? d.lessons?.[meta.id]?.pathId); }); setSavedCount(n); player.stop(); };
@@ -183,7 +182,8 @@ export function useMushafLesson(o: {
     return (s: number, a: number, w: number) => applyTextVisibility(wordView(step, ctx, s, a, w), visibility, portion, step, s, a, w, step.kind === "recall" && step.scope === "page" ? portion[cursor] : null);
   }, [running, lesson, portion, step, shown, reveal, fadeLevel, manualFade, manualSel, visibility, cursor]);
   const onTap = (s: number, a: number) => {
-    if (!running) return false;
+    if (!o.enabled || !pageAyahs.some(([ps, pa]) => ps === s && pa === a)) return false;
+    if (!running) { if (!lesson?.completedAt) start(false, [s,a]); else start(true, [s,a]); return true; }
     if (lesson?.mode === "manual") { if (portion?.some((x) => x[0] === s && x[1] === a)) setManualSel([s, a]); return true; }
     return true; // guided: taps never open translations or reveal anything mid-step
   };
