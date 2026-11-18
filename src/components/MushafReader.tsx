@@ -390,7 +390,6 @@ function MushafView({ reciteLanding = false }: { reciteLanding?: boolean }) {
       {mode === "read" && !readerFocus && !reciteLanding && <section
         className="mushaf-reading-dock" aria-label="Movable reading controls">
         <div className="flex flex-wrap items-center gap-1">
-          }
           <button type="button" className="btn btn-sm" aria-expanded={readDockOpen} onClick={() => setReadDockOpen((v) => !v)}><ControlIcon name={readDockOpen ? "chevron-up" : "chevron-down"} /> {readDockOpen ? "Hide reading controls" : "Reading controls"}</button>
         </div>
         {readDockOpen && <div className="mt-2 flex flex-wrap gap-2">
