@@ -41,7 +41,8 @@ export default function MiniMushafPage({ page, state, active, marks, wordClass, 
     setFont(Math.max(14, Math.min(30, (30 * (width - 16)) / mx * 0.98)));
   }, [width, page]);
 
-  return <div ref={box} className="mpage rounded-xl border border-line bg-surface px-2 py-2" style={{ fontSize: font ?? 30, visibility: font ? "visible" : "hidden" }} lang="ar">
+  return <div ref={box} className="mpage mushaf-printed-page mushaf-mini-printed-page px-2 py-2" style={{ fontSize: font ?? 30, visibility: font ? "visible" : "hidden" }} lang="ar">
+    <div className="mushaf-print-header" dir="ltr"><span>{sname(c.first[0])}</span><span>Juz {juzOf(c.first[0], c.first[1])}</span></div>
     {c.lines.map((l, n) => {
       if (l.t === "h") return <div key={n} className="mhead" dir="rtl">سورة {sarabic(l.s)}</div>;
       if (l.t === "b") return <div key={n} className="mline c"><span>{text(1, 1)}</span></div>;
@@ -55,6 +56,6 @@ export default function MiniMushafPage({ page, state, active, marks, wordClass, 
         })}
       </div>;
     })}
-    <div className="flex justify-between pt-1 font-ui text-xs text-muted" dir="ltr"><span>{sname(c.first[0])}</span><span>Page {page}</span><span>Juz {juzOf(c.first[0], c.first[1])}</span></div>
+    <div className="mushaf-print-footer" dir="ltr"><span aria-label={`Mushaf page ${page}`}>{page}</span></div>
   </div>;
 }

@@ -78,6 +78,8 @@ jobs:
         run: node --test scripts/test-pinned-docks-and-icons.mjs
       - name: "Test: compact guided learning and Recite feedback"
         run: node --test scripts/test-compact-guided-learning.mjs
+      - name: "Test: printed Mushaf page and canonical line integrity"
+        run: node --test scripts/test-printed-mushaf.mjs
       - name: "Test: learning features"
         run: npm run test:learning-features
       - name: "Test: automatic offline audio cache"
@@ -122,3 +124,14 @@ jobs:
 
       - name: Production Next.js build
         run: npm run build
+
+      - name: Printed Mushaf browser layout check and page 26 screenshots
+        run: node scripts/test-printed-mushaf-visual.mjs
+
+      - name: Save printed Mushaf viewport screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: printed-mushaf-page26-screenshots
+          path: artifacts/printed-mushaf/
+          if-no-files-found: ignore

@@ -177,6 +177,8 @@ function MushafView({ reciteLanding = false }: { reciteLanding?: boolean }) {
     // replace words with placeholders while this fit runs. A hidden mode must never resize a line.
     const measure = document.createElement("div");
     measure.setAttribute("aria-hidden", "true");
+    // Use the same verse-medallion geometry as the visible printed page when fitting each line.
+    measure.className = "mpage mushaf-printed-page";
     measure.style.cssText = `position:fixed;left:-10000px;top:0;visibility:hidden;pointer-events:none;width:max-content;direction:rtl;font-family:${cs.fontFamily};font-size:30px;font-kerning:normal;white-space:nowrap`;
     for (const line of c.lines) {
       if (line.t === "h" || line.t === "b") continue;
@@ -350,7 +352,7 @@ function MushafView({ reciteLanding = false }: { reciteLanding?: boolean }) {
             {Array.from({ length: 604 }, (_, i) => <option key={i} value={i + 1}>{i + 1}</option>)}
           </select>
         </label>
-        <button type="button" className="btn btn-sm self-end" onClick={() => setShowLocationPicker(true)}><ControlIcon name="location" /> Go to Ayah</button>
+        <button type="button" className="btn btn-sm mushaf-location-jump self-end" aria-label="Go to Ayah" title="Go to Ayah" onClick={() => setShowLocationPicker(true)}><ControlIcon name="location" /><span className="sr-only">Go to Ayah</span></button>
       </nav>}
       <div className={`mushaf-header flex items-center gap-2 ${reciteLanding ? "mushaf-recite-header" : ""}`}>
         <div className="flex-1 min-w-0">
@@ -494,7 +496,7 @@ function MushafView({ reciteLanding = false }: { reciteLanding?: boolean }) {
       {ayahView && <div className="mushaf-page-shell mushaf-ayah-list overflow-y-auto rounded-2xl border border-line bg-surface py-2" aria-label={`Page ${pg}, Ayah by Ayah`}>
         <AyahList ayahs={c.ayat} state={listState} active={listActive} marks={listMarks} onWord={onListWord} />
       </div>}
-      <div ref={wrap} style={ayahView ? { display: "none" } : undefined} className="mushaf-page-shell overflow-x-auto rounded-2xl border border-line bg-surface" dir="rtl" lang="ar" aria-label={`Madani Mushaf page ${pg}`} tabIndex={-1}
+      <div ref={wrap} style={ayahView ? { display: "none" } : undefined} className="mushaf-page-shell mushaf-paper-shell overflow-x-auto" dir="rtl" lang="ar" aria-label={`Madani Mushaf page ${pg}`} tabIndex={-1}
         onTouchStart={(e) => { const t = e.touches; touch.current = t.length === 2 ? { x: 0, y: 0, d: Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY), r: 1 } : { x: t[0].clientX, y: t[0].clientY, d: 0, r: 1 }; }}
         onTouchMove={(e) => { const t = e.touches, s = touch.current; if (s?.d && t.length === 2) s.r = Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY) / s.d; }}
         onTouchEnd={(e) => {
@@ -504,7 +506,8 @@ function MushafView({ reciteLanding = false }: { reciteLanding?: boolean }) {
           const dx = e.changedTouches[0].clientX - s.x, dy = e.changedTouches[0].clientY - s.y;
           if (Math.abs(dx) > 70 && Math.abs(dy) < 40) { if (dx < 0 && pg < 604) { update((d) => markRead(d, pg)); go(pg + 1); } else if (dx > 0 && pg > 1) go(pg - 1); }
         }}>
-        <div ref={page} className="mpage px-3 py-4" {...pressHandlers} style={{ width: `${zoom * 100}%`, fontSize: fitMeasured ? fit!.font : 30, visibility: measured ? "visible" : "hidden" }}>
+        <div ref={page} className="mpage mushaf-printed-page px-3 py-4" {...pressHandlers} style={{ width: `${zoom * 100}%`, fontSize: fitMeasured ? fit!.font : 30, visibility: measured ? "visible" : "hidden" }}>
+          <div className="mushaf-print-header" dir="ltr"><span>{sname(c.first[0])}</span><span>Juz {j}</span></div>
           {c.lines.map((l, n) => {
             if (l.t === "h") return <div key={n} className="mhead" dir="rtl" lang="ar">سورة {sarabic(l.s)}</div>;
             li++;
@@ -537,7 +540,7 @@ function MushafView({ reciteLanding = false }: { reciteLanding?: boolean }) {
               </div>
             );
           })}
-          <div className="flex justify-between text-xs text-muted pt-2 font-ui" dir="ltr"><span>{sname(c.first[0])}</span><span>{pg}</span><span>Juz {j}</span></div>
+          <div className="mushaf-print-footer" dir="ltr"><span className="sr-only">{sname(c.first[0])} · Juz {j} · </span><span aria-label={`Mushaf page ${pg}`}>{pg}</span></div>
         </div>
       </div>
 

@@ -36,6 +36,7 @@ test("Icon controls are inline SVG with readable labels and no external image as
  assert.match(recite, /ControlIcon name=\{hidden \? "eye" : "eye-off"\}/);
  assert.match(recite, /<ControlIcon name="mic" \/> Recite/);
  const mushaf = await read("src/components/MushafReader.tsx");
- assert.match(mushaf, /<ControlIcon name="location" \/> Go to Ayah/);
+ assert.match(mushaf, /aria-label="Go to Ayah"/);
+ assert.match(mushaf, /<ControlIcon name="location" \/>/);
  assert.doesNotMatch(mushaf, /<ControlIcon name="pin" \/> Move/);
 });
