@@ -85,7 +85,7 @@ try {
       const outRows=rows.filter(r=>{const b=r.getBoundingClientRect();return b.left<page.left-3||b.right>page.right+3;}).length;
       return {width:innerWidth,height:innerHeight,lines:rows.length,
         page:document.querySelector(".mushaf-print-footer")?.textContent?.trim(),
-        header:header?.textContent?.trim(),footer:footer?.textContent?.trim(),
+        header:header?.textContent?.trim(),footer:footer?.querySelector('[aria-label^="Mushaf page"]')?.textContent?.trim(),
         font,normalWordBackground:sample.backgroundColor,
         outRows,screenOverflow:document.documentElement.scrollWidth>innerWidth+2,
         shellOverflow:shell.scrollWidth>shell.clientWidth+2,
