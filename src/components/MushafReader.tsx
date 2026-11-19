@@ -352,7 +352,7 @@ function MushafView({ reciteLanding = false }: { reciteLanding?: boolean }) {
             {Array.from({ length: 604 }, (_, i) => <option key={i} value={i + 1}>{i + 1}</option>)}
           </select>
         </label>
-        <button type="button" className="btn btn-sm self-end" onClick={() => setShowLocationPicker(true)}><ControlIcon name="location" /> Go to Ayah</button>
+        <button type="button" className="btn btn-sm mushaf-location-jump self-end" aria-label="Go to Ayah" title="Go to Ayah" onClick={() => setShowLocationPicker(true)}><ControlIcon name="location" /><span className="sr-only">Go to Ayah</span></button>
       </nav>}
       <div className={`mushaf-header flex items-center gap-2 ${reciteLanding ? "mushaf-recite-header" : ""}`}>
         <div className="flex-1 min-w-0">
