@@ -124,3 +124,14 @@ jobs:
 
       - name: Production Next.js build
         run: npm run build
+
+      - name: Printed Mushaf browser layout check and page 26 screenshots
+        run: node scripts/test-printed-mushaf-visual.mjs
+
+      - name: Save printed Mushaf viewport screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: printed-mushaf-page26-screenshots
+          path: artifacts/printed-mushaf/
+          if-no-files-found: ignore
