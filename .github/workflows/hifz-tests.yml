@@ -78,6 +78,8 @@ jobs:
         run: node --test scripts/test-pinned-docks-and-icons.mjs
       - name: "Test: compact guided learning and Recite feedback"
         run: node --test scripts/test-compact-guided-learning.mjs
+      - name: "Test: printed Mushaf page and canonical line integrity"
+        run: node --test scripts/test-printed-mushaf.mjs
       - name: "Test: learning features"
         run: npm run test:learning-features
       - name: "Test: automatic offline audio cache"
