@@ -177,6 +177,8 @@ function MushafView({ reciteLanding = false }: { reciteLanding?: boolean }) {
     // replace words with placeholders while this fit runs. A hidden mode must never resize a line.
     const measure = document.createElement("div");
     measure.setAttribute("aria-hidden", "true");
+    // Use the same verse-medallion geometry as the visible printed page when fitting each line.
+    measure.className = "mpage mushaf-printed-page";
     measure.style.cssText = `position:fixed;left:-10000px;top:0;visibility:hidden;pointer-events:none;width:max-content;direction:rtl;font-family:${cs.fontFamily};font-size:30px;font-kerning:normal;white-space:nowrap`;
     for (const line of c.lines) {
       if (line.t === "h" || line.t === "b") continue;
