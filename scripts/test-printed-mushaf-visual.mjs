@@ -112,5 +112,6 @@ try {
   try {ws?.close();}catch{}
   browser?.kill("SIGKILL");
   next.kill("SIGKILL");
-  await rm(profile,{recursive:true,force:true});
+  // Chrome may still be closing file handles after SIGKILL; retry transient ENOTEMPTY/EBUSY.
+  await rm(profile,{recursive:true,force:true,maxRetries:12,retryDelay:250});
 }
