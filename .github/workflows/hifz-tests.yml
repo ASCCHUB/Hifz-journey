@@ -70,6 +70,8 @@ jobs:
         run: npm run test:four-android-fixes
       - name: "Test: Tafsir sheet and actions"
         run: node --test scripts/test-ayah-tafsir-sheet.mjs
+      - name: "Test: Ayah audio without manual Surah import"
+        run: node --test scripts/test-ayah-audio-no-manual-import.mjs
       - name: "Test: screen awake and study controls"
         run: node --test scripts/test-screen-awake-dock.mjs
       - name: "Test: Dashboard, manual revision, Mushaf and recite"

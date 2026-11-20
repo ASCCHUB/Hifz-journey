@@ -12,7 +12,6 @@ import { update, useStore } from "@/lib/store";
 import { detectUrduVoice, pauseUrdu, resumeUrdu, speakUrdu, stopUrdu, type UrduVoice } from "@/lib/urduSpeech";
 import { resolveUrduAudio, URDU_TTS_LABEL } from "@/lib/audioSources";
 import { pauseUrduRecording, playUrduRecording, resumeUrduRecording, stopUrduRecording } from "@/lib/urduRecording";
-import PersonalSurahRecording from "./PersonalSurahRecording";
 import { shamshadTrack, SHAMSHAD_NARRATOR, SHAMSHAD_SOURCE } from "@/lib/shamshadUrdu";
 import { RECITERS, useAudio } from "./Audio";
 import { Sheet } from "./Shell";
@@ -32,7 +31,6 @@ export default function AyahQuickSheet({ s, a, onClose }: { s: number; a: number
   const recording = urduChoice?.type === "recording" ? urduChoice : null;
   const [urduMode, setUrduMode] = useState<"tts" | "recording">("recording"); // what plays (or played last)
   const [recNote, setRecNote] = useState("");
-  const personalPlayer = useRef<HTMLAudioElement | null>(null);
   const recRun = useRef(0);
   const stopRecording = () => { recRun.current++; stopUrduRecording(); };
 
@@ -51,10 +49,9 @@ export default function AyahQuickSheet({ s, a, onClose }: { s: number; a: number
 
   const mine = !!audio.cur && audio.cur[0] === s && audio.cur[1] === a;
   const arabicState = mine ? (audio.playing ? "playing" : "paused") : "idle";
-  const playArabic = () => { personalPlayer.current?.pause(); stopUrdu(); stopRecording(); setTts((t) => (t === "speaking" || t === "paused" ? "idle" : t)); startedHere.current = true; audio.play(s, a, { s, a, b: a }); };
+  const playArabic = () => { stopUrdu(); stopRecording(); setTts((t) => (t === "speaking" || t === "paused" ? "idle" : t)); startedHere.current = true; audio.play(s, a, { s, a, b: a }); };
 
   const playUrdu = async () => {
-    personalPlayer.current?.pause();
     if (audio.playing) audio.toggle(); // one stream at a time: pause the recitation
     setRecNote("");
     {
@@ -126,8 +123,6 @@ export default function AyahQuickSheet({ s, a, onClose }: { s: number; a: number
             ? <p className="text-xs text-muted" role="status" data-testid="urdu-audio-label">{recording?.label.en ?? `Urdu translation recording · ${SHAMSHAD_NARRATOR} (${SHAMSHAD_SOURCE}); not the same attribution as the displayed ${urdu} text`} — translation audio, not Quran recitation.</p>
             : <p className="text-xs text-muted" role="status" data-testid="urdu-audio-label"><span>{URDU_TTS_LABEL.en}.</span> <span className="ur" dir="rtl" lang="ur">{URDU_TTS_LABEL.ur}</span>{(tts === "speaking" || tts === "paused") && voice?.ok && !voice.canPause ? " Pause is not supported by this voice; use Stop and Replay." : ""}</p>}
           {recNote && <p className="text-xs text-muted" role="status">{recNote}</p>}
-          {set === "tr-ur-maududi" && <PersonalSurahRecording surah={s} ayah={a} playerRef={personalPlayer}
-            onPlay={() => { stopUrdu(); stopRecording(); if (audio.playing) audio.toggle(); }}/>}
           {tts === "unavailable" && voice && !voice.ok && <p className="text-sm text-muted" role="status">{voice.reason}</p>}
           {tts === "failed" && <p className="text-sm text-weak" role="alert">The Urdu voice could not play this translation. You can read it below.</p>}
           {showTr && (trErr ? <p className="text-sm text-weak">The Urdu translation could not be loaded.</p>
