@@ -1,6 +1,6 @@
 name: Android CI test APK
 
-# Requested rebuild after compact guided learning fixes (PR #11, 2026-11-18).
+# Manual test APK rebuild requested on 2026-11-20 (temporary CI debug key; NOT for in-place update).
 # Manual. Runs the full test workflow first, then runs the project's own
 # scripts/build-android.ps1 unchanged on a GitHub-hosted Windows runner.
 #
