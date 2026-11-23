@@ -86,6 +86,8 @@ jobs:
         run: npm run test:learning-features
       - name: "Test: automatic offline audio cache"
         run: npm run test:audio-cache
+      - name: "Test: Ayah Chain plan and integration"
+        run: npm run test:ayah-chain 
       # Compiles and tests the Android native audio download path (pure Java) and parses MainActivity.java.
       # Uses the JDK preinstalled on GitHub's Ubuntu runners.
       - name: "Test: Android audio download path (Java)"
