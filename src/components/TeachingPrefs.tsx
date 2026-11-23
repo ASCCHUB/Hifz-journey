@@ -2,6 +2,7 @@
 // Teaching preferences — one place to review how the tutor teaches. Each value has a single stored copy:
 // mode/level/portion/repeat in `tutor`, the reciter in settings.reciter, daily goals via setDailyPrefs().
 import { RECITERS } from "@/components/Audio";
+import AyahChainSettings from "@/components/AyahChainSettings";
 import { dailyPrefs, setDailyPrefs } from "@/lib/prefs";
 import { defaultTutor, update, useStore, type TutorPrefs } from "@/lib/store";
 
@@ -21,6 +22,7 @@ export default function TeachingPrefs() {
       <label className="text-sm">Study time per day<select className="field mt-1" value={p.studyMinutes} onChange={(e) => update((d) => setDailyPrefs(d, { studyMinutes: +e.target.value }))}>{[...new Set([10, 15, 20, 30, 45, 60, 90, p.studyMinutes])].sort((a, b) => a - b).map((m) => <option key={m} value={m}>{m} minutes</option>)}</select></label>
     </div>
     <p className="mt-3 text-sm text-muted">Path: <b className="text-ink">{primary ? primary.name : "none yet"}</b> · Previously memorized portions: <b className="text-ink">{claims}</b> · New per day: <b className="text-ink">{p.newAmount} {p.newUnit.replace("_", " ")}</b> · Revision per day: <b className="text-ink">{p.revisionAmount} {p.revisionUnit}</b>. Change these under “My Hifz Journey → Edit journey”.</p>
+    <AyahChainSettings />
     <p className="mt-1 text-xs text-muted">Changing preferences never changes your memorization records.</p>
   </details>;
 }

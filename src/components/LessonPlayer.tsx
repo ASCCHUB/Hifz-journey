@@ -20,6 +20,10 @@ import { listRefPdfs } from "@/lib/refPdfs";
 import { referenceJuzForAyah, referenceMapHref } from "@/lib/refPdfLearn";
 import MiniMushafPage from "@/components/MiniMushafPage";
 import { useLearnView, ViewSwitch, type WordState } from "@/components/LearnView";
+import { chainHref } from "@/components/AyahChain";
+import ControlIcon from "@/components/ControlIcon";
+import { readChainPrefs } from "@/lib/ayahChain";
+import { CHAIN_TEXT } from "@/lib/ayahChainText";
 
 type Mark = "ok" | "hes" | "bad";
 const MARK_LABEL: Record<Mark, string> = { ok: "Recited correctly", hes: "Needed help", bad: "Could not recall" };
@@ -224,6 +228,7 @@ export default function LessonPlayer({ unit, ayahs, title, template = "learn", p
     <div className="flex items-center gap-2"><Link href="/journey" className="btn btn-sm" aria-label="Save and exit">Save &amp; exit</Link><div className="min-w-0 flex-1"><div className="truncate font-bold">{lesson.title}</div><div className="text-sm font-semibold text-accent">Ayah {step.ayahIndex} of {step.ayahCount} · {PHASE_LABEL[step.phase]}</div><div className="text-xs text-muted">step {lesson.step + 1} of {steps.length} · {lesson.level} level</div></div><button className="btn btn-sm" onClick={() => setShowMethod((v) => !v)} aria-expanded={showMethod} aria-label="How this method works">?</button></div>
     {showMethod && <MethodIntro onClose={() => setShowMethod(false)} />}
     {step.kind !== "order" && <ViewSwitch view={learnView.view} setView={learnView.setView} defaultView={learnView.defaultView} />}
+    {readChainPrefs(st.tutor?.chain).on && <Link className="btn btn-sm self-start" data-testid="open-ayah-chain" href={chainHref(ayahs, lessonReturnTo)} onClick={() => player.stop()}><ControlIcon name="repeat" /> {CHAIN_TEXT.open}</Link>}
     {availableMapJuz !== null && <Link className="btn btn-sm self-start" href={referenceMapHref(availableMapJuz, lessonReturnTo)}>Visual Memory Map · Juz {availableMapJuz}</Link>}
     <div className="h-2 overflow-hidden rounded-full bg-line" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}><div className="h-full bg-accent" style={{ width: `${pct}%` }} /></div>
     <div className="card flex flex-col gap-3">
@@ -273,13 +278,15 @@ export default function LessonPlayer({ unit, ayahs, title, template = "learn", p
 }
 
 function ManualLesson({ lessonId, ayahs, lesson, onFinish, player }: { lessonId: string; ayahs: Ayah[]; lesson: LessonState; onFinish: () => void; player: ReturnType<typeof useRepeatPlayer> }) {
+  const chainOn = readChainPrefs(useStore().tutor?.chain).on;
   const [fade, setFade] = useState<Record<string, 0 | 1 | 2 | 3>>({}); const [times, setTimes] = useState(3);
   const rate = (s: number, a: number, m: Mark) => update((d) => { const l = d.lessons?.[lessonId]; if (!l) return; l.results[finalKey(s, a)] = markWithAssistance(m, !!l.hinted[finalKey(s, a)]); l.updatedAt = Date.now(); });
   const rated = ayahs.filter(([s, a]) => lesson.results[finalKey(s, a)]).length;
   return <section className="flex flex-col gap-3">
     <div className="flex items-center gap-2"><Link href="/journey" className="btn btn-sm">Save &amp; exit</Link><div className="min-w-0 flex-1"><div className="truncate font-bold">{lesson.title}</div><div className="text-xs text-muted">Manual learning · {rated} of {ayahs.length} rated</div></div>
       <label className="text-sm text-muted">Repeat <select className="field ml-1 inline w-auto" value={times} onChange={(e) => setTimes(+e.target.value)}>{[1, 3, 5, 10].map((n) => <option key={n} value={n}>{n}×</option>)}</select></label></div>
-    <button className="btn self-start" onClick={() => player.playing ? player.stop() : player.play(ayahs, 1)}>{player.playing ? "■ Stop" : "▶ Play all"}</button>
+    <div className="flex flex-wrap gap-2"><button className="btn self-start" onClick={() => player.playing ? player.stop() : player.play(ayahs, 1)}>{player.playing ? "■ Stop" : "▶ Play all"}</button>
+      {chainOn && <Link className="btn self-start" data-testid="open-ayah-chain" href={chainHref(ayahs, `/learn?s=${ayahs[0][0]}&a=${ayahs[0][1]}&endS=${ayahs.at(-1)![0]}&endA=${ayahs.at(-1)![1]}${lesson.template === "recover" ? "&template=recover" : ""}`)} onClick={() => player.stop()}><ControlIcon name="repeat" /> {CHAIN_TEXT.open}</Link>}</div>
     {player.err && <p className="text-sm text-weak">{player.err}</p>}
     {ayahs.map(([s, a]) => { const key = `${s}:${a}`, f = fade[key] ?? 0, r = lesson.results[finalKey(s, a)]; return <div key={key} className="card flex flex-col gap-2">
       <AyahBlock units={[{ s, a, from: 0, to: words(s, a).length - 1, whole: true }]} fade={f} />

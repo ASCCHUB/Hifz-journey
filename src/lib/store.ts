@@ -2,6 +2,7 @@
 // App state: kept in memory, saved durably on the device (IndexedDB + localStorage mirror, see persist.ts),
 // and synced to Supabase when the user is signed in.
 import type { RevisionSessionState } from "./revisionSession";
+import type { ChainPrefs } from "./ayahChain";
 import { useSyncExternalStore } from "react";
 import type { SetName } from "./quran";
 import { mergeStates, sameData } from "./sync";
@@ -50,6 +51,8 @@ export type TutorPrefs = {
   method?: "mushaf" | "ayah";
   visibility?: "full" | "unlearned" | "current";
   introDismissedAt?: number;   // "How this method works" dismissed (separate from profile onboarding)
+  /** Ayah Chain listening mode (lib/ayahChain.ts). Optional: absent in older saves = off; read via readChainPrefs(). */
+  chain?: ChainPrefs;
   updatedAt: number;
 };
 export type Goal = { id: string; type: "memorize" | "revise" | "read"; k: "juz" | "surah" | "all"; v: number; c: number; due: number };

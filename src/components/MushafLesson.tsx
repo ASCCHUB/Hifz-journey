@@ -19,6 +19,9 @@ import { juzOf, ref, sname, words } from "@/lib/quran";
 import { ACTIVE_RECALL_PDF_KEY, listRefPdfs, PENDING_RECALL_PDF_KEY, REFERENCE_JUZ } from "@/lib/refPdfs";
 import { referenceJuzForAyah, referenceMapHref } from "@/lib/refPdfLearn";
 import { update, useStore, type LessonState } from "@/lib/store";
+import { chainHref } from "@/components/AyahChain";
+import { readChainPrefs } from "@/lib/ayahChain";
+import { CHAIN_TEXT } from "@/lib/ayahChainText";
 
 type Mark = "ok" | "hes" | "bad";
 const MARK_LABEL: Record<Mark, string> = { ok: "Recited correctly", hes: "Needed help", bad: "Could not recall" };
@@ -284,6 +287,7 @@ export function useMushafLesson(o: {
           {canRecall && <Link className="btn btn-sm" href={reciteHref(units)}><ControlIcon name="mic" /> Microphone</Link>}
           {prep && <button type="button" className="btn btn-sm" onClick={() => setShowMeaning(v => !v)}>Meaning</button>}
           {prep && matchedJuz && <Link className="btn btn-sm" href={visualMapHref}>Memory map</Link>}
+          {readChainPrefs(st.tutor?.chain).on && <Link className="btn btn-sm" data-testid="open-ayah-chain" href={chainHref(portion, o.returnUrl)} onClick={() => player.stop()}><ControlIcon name="repeat" /> {CHAIN_TEXT.open}</Link>}
           {exit}
           <p className="w-full text-xs text-muted">{step.instruction}</p>
           {showMeaning && "units" in step && <Meaning units={step.units} />}
